@@ -1795,6 +1795,7 @@
   "computer.tab.browser": "Navigateur",
   "computer.tabsAria": "Vue du panneau du bot",
   "computer.simple.needsSetup": "Le bureau de {name} a d'abord besoin d'une étape de configuration.",
+  "computer.backToBot": "Retour à {name}",
   "computer.close": "Fermer le panneau Écran",
   "computer.screenOf": "Écran de {name}",
   "computer.badge.local": "cet ordinateur",

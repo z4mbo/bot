@@ -1,4 +1,3 @@
-import { Puzzle } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { cn } from "@/lib/cn";
@@ -9,6 +8,8 @@ import { loadAppCards } from "./bot-settings/useBotApps";
 import { preloadConnectedApps } from "@/lib/connected-apps";
 import type { ToolkitCard } from "./ServiceIcon";
 import { ELEVATED_CONTROL, ELEVATED_HOVER } from "./elevated";
+import { HoverTip } from "./HoverTip";
+import { PluginsPanel } from "./lazy-screens";
 import { SIMPLE_TOP_BUTTON } from "./SidebarSimpleTop";
 
 export type AppFace = Pick<ToolkitCard, "slug" | "label" | "logo" | "domain">;
@@ -65,23 +66,35 @@ function AppFaceIcon({ face, className }: { face: AppFace; className?: string })
 /** The outer logos fan out while the pill is hovered. */
 const FAN = ["motion-safe:group-hover/apps:-translate-x-[3px] motion-safe:group-hover/apps:-rotate-[8deg]", "", "motion-safe:group-hover/apps:translate-x-[3px] motion-safe:group-hover/apps:rotate-[8deg]"];
 
-/** `circle` is the collapsed rail's round button. */
+/** Three tiles and a fourth being added: the app store. */
+function AppsGlyph() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="1.5" y="1.5" width="5" height="5" rx="1.25" />
+      <rect x="9.5" y="1.5" width="5" height="5" rx="1.25" />
+      <rect x="1.5" y="9.5" width="5" height="5" rx="1.25" />
+      <path d="M12 9.25v5.5M9.25 12h5.5" />
+    </svg>
+  );
+}
+
+/** `circle` is the round button: the Simple sidebar's footer and the collapsed rail. */
 export function SidebarConnectApps({ circle = false }: { circle?: boolean }) {
   const { state, dispatch } = useStore();
   const { faces, connected } = useSidebarApps();
   const label = connected ? t("sidebar.nav.apps") : t("sidebar.connectApps");
-  return (
+  const button = (
     <button
       type="button"
       data-tour="nav-apps"
       data-sidebar-nav="apps"
       aria-pressed={state.pluginsOpen}
       aria-label={circle ? label : undefined}
-      title={circle ? label : undefined}
+      onPointerEnter={() => { void PluginsPanel.preload().catch(() => {}); }}
       onClick={() => dispatch({ type: "togglePlugins", open: true })}
-      className={circle ? SIMPLE_TOP_BUTTON : cn("group/apps flex h-9 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-full pl-4 pr-3 text-[14px] font-medium leading-5 text-ink", ELEVATED_CONTROL, ELEVATED_HOVER)}
+      className={circle ? cn(SIMPLE_TOP_BUTTON, "text-ink") : cn("group/apps flex h-9 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-full pl-4 pr-3 text-[14px] font-medium leading-5 text-ink", ELEVATED_CONTROL, ELEVATED_HOVER)}
     >
-      {circle ? <Puzzle size={18} strokeWidth={1.5} aria-hidden="true" /> : <>
+      {circle ? <AppsGlyph /> : <>
         <span className="min-w-0 truncate">{label}</span>
         {/* The logos rest grey and apart, with no tile, so the sidebar's loudest colour is never an ad; hover brings the tiles and colour back. */}
         <span aria-hidden="true" data-app-faces="" className="flex shrink-0 items-center gap-1 opacity-60 grayscale motion-safe:transition-[filter,opacity] group-hover/apps:opacity-100 group-hover/apps:grayscale-0 group-hover/apps:invert-0 group-hover/apps:mix-blend-normal group-focus-visible/apps:opacity-100 group-focus-visible/apps:grayscale-0 group-focus-visible/apps:invert-0 group-focus-visible/apps:mix-blend-normal">
@@ -91,4 +104,5 @@ export function SidebarConnectApps({ circle = false }: { circle?: boolean }) {
       </>}
     </button>
   );
+  return circle ? <HoverTip label={label}>{button}</HoverTip> : button;
 }

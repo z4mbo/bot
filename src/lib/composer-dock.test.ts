@@ -1,23 +1,27 @@
 import { describe, expect, it } from "vitest";
 
-import { messageBoxHeight, TRANSCRIPT_GAP, transcriptEndPad } from "./composer-dock";
+import { COMPOSER_CLEARANCE, messageBoxHeight, transcriptEndPad } from "./composer-dock";
 
 describe("transcriptEndPad", () => {
-  it("adds one gap-3 of black above the measured composer", () => {
-    expect(TRANSCRIPT_GAP).toBe("0.75rem");
-    expect(transcriptEndPad(72)).toBe("calc(72px + 0.75rem)");
+  it("leaves 54px clear between the last message and the measured composer", () => {
+    expect(COMPOSER_CLEARANCE).toBe("54px");
+    expect(transcriptEndPad(72)).toBe("calc(72px + 54px)");
   });
 
   it("ceils fractional heights so a subpixel composer cannot eat the gap", () => {
-    expect(transcriptEndPad(71.2)).toBe("calc(72px + 0.75rem)");
+    expect(transcriptEndPad(71.2)).toBe("calc(72px + 54px)");
+  });
+
+  it("gives the working row its slot out of the clearance, so the transcript holds still", () => {
+    expect(transcriptEndPad(72, { presenceSlot: true })).toBe("calc(72px + 54px - 38px)");
   });
 
   it("does not go negative", () => {
-    expect(transcriptEndPad(-4)).toBe("calc(0px + 0.75rem)");
+    expect(transcriptEndPad(-4)).toBe("calc(0px + 54px)");
   });
 
   it("uses a one-line empty-composer fallback, not the old two-row slot", () => {
-    expect(transcriptEndPad(Number.NaN)).toBe("calc(64px + 0.75rem)");
+    expect(transcriptEndPad(Number.NaN)).toBe("calc(64px + 54px)");
   });
 });
 

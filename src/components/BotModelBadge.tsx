@@ -1,5 +1,4 @@
 import type { Bot, InstanceInfo } from "@/state/store";
-import { cn } from "@/lib/cn";
 import { t } from "@/lib/i18n";
 import { engineDisplayName } from "@/lib/engine-name";
 import { InstanceProviderMark } from "./ProviderIcons";
@@ -40,14 +39,3 @@ export function BotModelBadge({ bot, instances, avatarSize }: {
   );
 }
 
-/** Simple mode's faded engine mark. It has no title of its own, so hovering it still shows the row's tooltip with the model and engine. */
-export function BotEngineMark({ bot, instances, className }: { bot: Pick<Bot, "modelSelection">; instances: InstanceInfo[]; className?: string }) {
-  const model = botModel(bot, instances);
-  if (!model) return null;
-  return (
-    <span data-testid="model-badge" role="img" aria-label={t("sidebar.bot.modelBadge", { model: model.label, engine: model.instance.displayName })}
-      className={cn("flex shrink-0", className)}>
-      <InstanceProviderMark instance={model.instance} size={14} subtle />
-    </span>
-  );
-}

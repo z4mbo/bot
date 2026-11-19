@@ -20,6 +20,10 @@ import { t } from "@/lib/i18n";
 import { CarvedAvatar } from "./CarvedAvatar";
 import { steelBodyImage } from "@/lib/steel-body";
 
+type LocalBotAvatar = (props: { bot: BotAvatarProps["bot"]; size?: number; state?: MausState }) => ReactNode;
+/** A git-excluded local experiment may draw bots its own way; in any other checkout this finds nothing. */
+const localBotAvatar = import.meta.env.MODE === "test" ? undefined : Object.values(import.meta.glob<{ BotAvatarOverride: LocalBotAvatar }>("../grok-study/BotAvatarOverride.tsx", { eager: true }))[0]?.BotAvatarOverride;
+
 export const EYE_SCALE = 1.12;
 export const MOUTH_WEIGHT = 11;
 
@@ -263,6 +267,11 @@ export function BotAvatar({ bot, size = 44, label, readable = false, ...mascotPr
     hasUrl: Boolean(profile.avatarUrl),
     imageFailed,
   });
+
+  if (outcome !== "flatImage" && localBotAvatar) {
+    const LocalAvatar = localBotAvatar;
+    return <LocalAvatar bot={bot} size={size} state={mascotProps.state} />;
+  }
 
   if (outcome !== "flatImage") {
     return (

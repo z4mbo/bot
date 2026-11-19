@@ -207,6 +207,7 @@ export function ModelPicker({
   contained = false,
   label,
   size = "md",
+  inPill = false,
 }: {
   bot: Bot;
   threadId?: string;
@@ -214,6 +215,8 @@ export function ModelPicker({
   contained?: boolean;
   label?: ReactNode;
   size?: "sm" | "md";
+  /** Simple's chat header: the end of the bot's pill, after a divider, with no fill of its own. */
+  inPill?: boolean;
 }) {
   const { dispatch: storeDispatch, refreshInstances, refreshModels: refreshInstanceModels } = useStoreActions(), state = useStoreSelector((s) => ({ instances: s.instances, modelVariantSessions: s.modelVariantSessions, profile: s.bots.find((candidate) => candidate.id === shown.id) }), sameFields);
   const [open, setOpen] = useState(false);
@@ -654,8 +657,9 @@ export function ModelPicker({
         "group flex items-center rounded-full text-[13px] leading-[18px] text-ink-secondary disabled:cursor-not-allowed disabled:text-ink-tertiary",
         contained
           ? "min-w-0 max-w-[72%] transition-colors duration-150 hover:bg-ink/[0.06] hover:text-ink aria-expanded:bg-ink/[0.08] aria-expanded:text-ink disabled:hover:bg-transparent"
+          : inPill ? "h-full shrink-0 pl-2.5 pr-3.5 hover:text-ink aria-expanded:text-ink"
           : cn("shrink-0", ELEVATED_FLOAT, ELEVATED_HOVER, "hover:text-ink aria-expanded:text-ink disabled:hover:bg-composer"),
-        size === "sm" ? "h-7 pl-2 pr-1.5" : "h-8 pl-2.5 pr-2",
+        !inPill && (size === "sm" ? "h-7 pl-2 pr-1.5" : "h-8 pl-2.5 pr-2"),
       )}
     >
       <span className="relative mr-1.5 flex shrink-0 group-disabled:opacity-50">

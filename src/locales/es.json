@@ -4114,6 +4114,7 @@
   "computer.simple.dest.thisPc": "Este PC",
   "computer.simple.needsSetup": "El escritorio de {name} necesita antes un paso de configuración.",
   "computer.simple.showAdvanced": "Mostrar los controles avanzados",
+  "computer.backToBot": "Volver a {name}",
   "computer.close": "Cerrar el panel Pantalla",
   "computer.screenOf": "Pantalla de {name}",
   "computer.badge.local": "este equipo",

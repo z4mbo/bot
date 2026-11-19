@@ -1,5 +1,5 @@
 import { Crown, Loader2, Phone } from "lucide-react";
-import { memo, useLayoutEffect, useRef, useState, type KeyboardEvent, type MouseEvent } from "react";
+import { memo, useState, type KeyboardEvent, type MouseEvent } from "react";
 
 import { cn } from "@/lib/cn";
 import { t } from "@/lib/i18n";
@@ -17,6 +17,8 @@ import { RenameTitle } from "./RenameTitle";
 import { openBotContextMenu, useVisibleMessages, type BotRowProps } from "./Sidebar";
 import { sidebarBotStatus } from "./SidebarBotActivity";
 import { SIMPLE_ROW_FOCUS } from "./SidebarSimpleTop";
+import { botPreview } from "./sidebar-preview";
+import { SidebarTilePreview, useTilePreview } from "./SidebarTilePreview";
 import { useBotUnread } from "./unread-notice";
 
 const RING = "ring-2 ring-[var(--tile)]";
@@ -37,7 +39,9 @@ export const SidebarBotTile = memo(function SidebarBotTile({ primary = false, dr
   const status = waiting ? t("sidebar.preview.waiting") : working ? t("chat.activity.working") : failed ? t("sidebar.preview.failed") : teammateWait ? t("sidebar.preview.waitingOnTeammate") : queued ? t("task.queued") : "";
   const label = [bot.name, bot.chiefOfStaff ? t("sidebar.bot.chiefOfStaff") : "", onLiveCall ? t("call.live.badge") : "", status, unread ? t("task.unread") : ""].filter(Boolean).join(" · ");
   const reorder = pinnedCircleDragHandlers(bot.id, { drag, dragging, prevId, nextId });
-  const open = () => openBotRow(dispatch, bot, showThreads, selected);
+  const preview = useTilePreview();
+  const previewText = botPreview(bot, visible, instances, false);
+  const open = () => { preview.close(); openBotRow(dispatch, bot, showThreads, selected); };
   const rename = (name: string) => {
     if (!remoteClient) return dispatch({ type: "updateBot", botId: bot.id, patch: { name } });
     void api(`/api/bots/${bot.id}/profile`, { method: "PATCH", body: JSON.stringify({ name }) })
@@ -69,17 +73,22 @@ export const SidebarBotTile = memo(function SidebarBotTile({ primary = false, dr
       aria-current={selected && !renaming ? "page" : undefined}
       aria-busy={deleting || undefined}
       aria-keyshortcuts={drag ? "Alt+ArrowUp Alt+ArrowDown" : undefined}
-      title={tooltip}
+      title={previewText ? undefined : tooltip}
       {...reorder}
+      onPointerEnter={(event) => { if (previewText && !renaming && !dragging) preview.open(event.currentTarget); }}
+      onPointerLeave={preview.close}
+      onDragStartCapture={preview.close}
       onClick={(event: MouseEvent) => { if (!renaming && !(event.target instanceof HTMLInputElement)) open(); }}
       onKeyDown={onKeyDown}
       onContextMenu={(event) => openBotContextMenu(onMenu, bot.id, event)}
       className={cn(
-        "flex h-[92px] w-[78px] shrink-0 cursor-pointer flex-col items-center rounded-[8px] bg-[var(--tile)] px-1 pt-2 transition-colors duration-150", SIMPLE_ROW_FOCUS,
+        "flex h-[92px] shrink-0 cursor-pointer flex-col items-center rounded-[8px] bg-[var(--tile)] px-1 transition-colors duration-150", SIMPLE_ROW_FOCUS,
+        primary ? "w-[92px] pt-1.5" : "w-[78px] pt-2",
         selected ? "[--tile:var(--color-raised)]" : "[--tile:var(--color-panel)] hover:[--tile:color-mix(in_srgb,var(--color-raised)_50%,var(--color-panel))]",
         pinnedCircleDragClass({ drag, dragging, drop }),
       )}
     >
+      {preview.anchor && previewText && <SidebarTilePreview bot={bot} text={previewText} anchor={preview.anchor} />}
       <span className="relative flex">
         <BotAvatar
           bot={bot}
@@ -135,44 +144,11 @@ export function SidebarNoBots() {
   return <p data-sidebar-empty="" className="px-5 pt-4 text-[13px] leading-[18px] text-ink-tertiary">{t("onboarding.shell.noBots")}</p>;
 }
 
-/** How much of the grid's right end Search and New take in a framed window's corner (Sidebar's corner row). */
-const CORNER_CLEAR = 60;
-
-/** Whether the tiles' first row, as laid out, ends before the corner's buttons: the sidebar's width and the number of
- * tiles decide it. */
-export function tilesClearCorner(tiles: { top: number; right: number }[], gridRight: number): boolean {
-  if (!tiles.length) return false;
-  const top = tiles[0]!.top;
-  return Math.max(...tiles.filter((tile) => Math.abs(tile.top - top) < 1).map((tile) => tile.right)) <= gridRight - CORNER_CLEAR;
-}
-
-/** While the tiles clear the corner they rise beside its buttons (styles.css); else they start under them. */
-function useBesideCorner(corner: boolean, count: number) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [beside, setBeside] = useState(false);
-  useLayoutEffect(() => {
-    const grid = ref.current;
-    if (!corner || !grid) { setBeside(false); return; }
-    const measure = () => {
-      const tiles = [...grid.querySelectorAll<HTMLElement>("[data-sidebar-tile]")].map((tile) => tile.getBoundingClientRect());
-      setBeside(tilesClearCorner(tiles, grid.getBoundingClientRect().right));
-    };
-    measure();
-    if (typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver(measure);
-    observer.observe(grid);
-    return () => observer.disconnect();
-  }, [corner, count]);
-  return { ref, beside };
-}
-
-export function SidebarTileGrid({ primary, pinned, row, corner = false }: { primary: Bot | null; pinned: Bot[]; row: (bot: Bot) => BotRowProps; corner?: boolean }) {
+export function SidebarTileGrid({ primary, pinned, row }: { primary: Bot | null; pinned: Bot[]; row: (bot: Bot) => BotRowProps }) {
   const order = usePinnedCircleDrag(pinned);
-  const besideCorner = useBesideCorner(corner, (primary ? 1 : 0) + order.ranked.length);
   if (!primary && order.ranked.length === 0) return null;
   return (
-    <div ref={besideCorner.ref} data-sidebar-tiles="" data-beside-corner={besideCorner.beside ? "" : undefined}
-      className="flex max-h-[40vh] flex-wrap justify-center gap-1 overflow-y-auto px-3 pb-4 pt-2.5" {...order.frameProps}>
+    <div data-sidebar-tiles="" className="flex flex-wrap justify-center gap-1 pb-4 pt-3.5" {...order.frameProps}>
       {primary && <SidebarBotTile {...row(primary)} primary />}
       {order.ranked.map((bot) => <SidebarBotTile key={bot.id} {...row(bot)} {...order.dragProps(bot)} />)}
       <span role="status" className="sr-only">{order.moved}</span>

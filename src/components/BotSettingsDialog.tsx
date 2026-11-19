@@ -3,6 +3,7 @@ import { ChevronDown, Search, X } from "lucide-react";
 
 import { useStore, type Bot, type BotSettingsSection } from "@/state/store";
 import { cn } from "@/lib/cn";
+import { takePanelHandoff } from "@/lib/panel-handoff";
 import { useCaptionChrome } from "./DesktopCapabilities";
 import { BOT_SECTIONS, appSearchPhase, searchEmptyText, sectionLabel, sectionMatches } from "./bot-settings/sections";
 import { useBotApps } from "./bot-settings/useBotApps";
@@ -35,11 +36,13 @@ import { ShareBotButton, useTeamName } from "./bot-access/ShareBotButton";
 /** Where the Library's memory, skills and folder rows lead in Advanced settings. */
 const LIBRARY_LINKS: Partial<Record<SimplePageId, BotSettingsSection>> = { memory: "memory", skills: "skills", folder: "access" };
 
-export function BotSettingsDialog({ bot, overlay = false }: {
+export function BotSettingsDialog({ bot, overlay = false, closing = false }: {
   bot: Bot;
   overlay?: boolean;
+  closing?: boolean;
 }) {
   const { state, dispatch } = useStore();
+  const [handedOff] = useState(() => takePanelHandoff());
   const section = state.botSettingsSection;
   const derived = useBotSettingsDerived(bot);
   const dialogRef = useRef<HTMLElement | null>(null);
@@ -174,7 +177,8 @@ export function BotSettingsDialog({ bot, overlay = false }: {
         role="dialog"
         aria-labelledby="bot-settings-title"
         tabIndex={-1}
-        className={sidePanelCls(overlay, simpleView)}
+        className={sidePanelCls(overlay, simpleView, closing, handedOff)}
+        inert={closing || undefined}
       >
         {simpleView ? (
           <BotPanel

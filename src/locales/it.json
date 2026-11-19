@@ -4379,6 +4379,7 @@
   "computer.simple.dest.thisPc": "Questo PC",
   "computer.simple.needsSetup": "Il desktop di {name} richiede prima un passaggio di configurazione.",
   "computer.simple.showAdvanced": "Mostra i controlli avanzati",
+  "computer.backToBot": "Torna a {name}",
   "computer.close": "Chiudi il pannello Schermo",
   "computer.screenOf": "Schermo di {name}",
   "computer.badge.local": "questo computer",

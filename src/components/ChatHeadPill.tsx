@@ -1,13 +1,13 @@
 import { localizedTaskTitle } from "@/lib/task-title";
 import { ChevronRight, Lock, UserRound, Users } from "lucide-react";
-import type { ComponentProps } from "react";
+import type { ComponentProps, ReactNode } from "react";
 
 import { cn } from "@/lib/cn";
 import { t } from "@/lib/i18n";
 import type { Bot } from "@/state/store"; import { useStoreSelector } from "@/state/store-select";
 import { awayFromMainThread } from "@/state/thread-navigation";
 import { BotAvatar } from "./Avatar";
-import { ELEVATED_FLOAT, ELEVATED_HOVER } from "./elevated";
+import { ELEVATED_CONTROL, ELEVATED_TINT } from "./elevated";
 import { sidebarBotActivityTasks } from "./SidebarBotActivity";
 import { BOT_PANEL_ID } from "./bot-panel/side-panel";
 import { sharedChatAudience } from "./TeamPrivateChatsLine";
@@ -32,11 +32,13 @@ function privacyLabelOf(privacy: ChatHeadPrivacy): string | null {
 /** Simple mode's whole chat header: the bot's face and name in one pill, which opens and closes the bot panel. Away from
  * the bot's main conversation it also names the one on screen. A dot says another of the bot's conversations needs a
  * look; a team chat says who can read it with one quiet glyph. */
-export function ChatHeadPill({ bot, avatar, privacy, onToggle }: {
+export function ChatHeadPill({ bot, avatar, privacy, onToggle, model }: {
   bot: Bot;
   avatar: Pick<ComponentProps<typeof BotAvatar>, "state" | "motion" | "motionKey" | "animated">;
   privacy: ChatHeadPrivacy;
   onToggle: () => void;
+  /** The model picker, at the pill's end after a divider. */
+  model?: ReactNode;
 }) {
   const open = useStoreSelector((state) => state.settingsOpen), pendingQueued = useStoreSelector((state) => state.pendingQueued);
   const elsewhere = sidebarBotActivityTasks(bot, pendingQueued).filter((task) => task.threadId !== bot.threadId).length;
@@ -48,6 +50,7 @@ export function ChatHeadPill({ bot, avatar, privacy, onToggle }: {
     : !title || title === UNTITLED ? t("task.untitledChat") : localizedTaskTitle(title);
   const label = t("chat.openProfileAria", { name: bot.name });
   return (
+    <div data-chathead-pill-shell className={cn("flex min-w-0 max-w-full items-center rounded-full shadow-(--shadow-float)", ELEVATED_CONTROL)}>
     <button
       type="button"
       data-chathead-pill
@@ -57,9 +60,9 @@ export function ChatHeadPill({ bot, avatar, privacy, onToggle }: {
       aria-label={conversation ? `${label}, ${conversation}` : label}
       aria-expanded={open}
       aria-controls={open ? BOT_PANEL_ID : undefined}
-      className={cn("group flex min-w-0 max-w-full items-center gap-2 rounded-full py-[7.5px] pl-[7.5px] pr-[13.5px] text-ink", ELEVATED_FLOAT, ELEVATED_HOVER)}
+      className={cn("group flex min-w-0 max-w-full items-center gap-2 rounded-full py-[9.5px] pl-2.5 text-ink", model ? "pr-3" : "pr-3.5", ELEVATED_TINT)}
     >
-      <BotAvatar bot={bot} size={24} {...avatar} />
+      <BotAvatar bot={bot} size={22} {...avatar} />
       <span dir="auto" className="min-w-0 truncate text-[14px] font-medium leading-5">{bot.name}</span>
       {conversation && (
         <>
@@ -83,5 +86,10 @@ export function ChatHeadPill({ bot, avatar, privacy, onToggle }: {
         </span>
       )}
     </button>
+    {model && <>
+      <span aria-hidden="true" data-chathead-divider className="h-4 w-px shrink-0 bg-ink/[0.12]" />
+      {model}
+    </>}
+    </div>
   );
 }

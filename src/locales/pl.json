@@ -4469,6 +4469,7 @@
   "computer.simple.dest.thisPc": "Ten PC",
   "computer.simple.needsSetup": "Pulpit bota {name} wymaga najpierw konfiguracji.",
   "computer.simple.showAdvanced": "Pokaż opcje zaawansowane",
+  "computer.backToBot": "Wróć do: {name}",
   "computer.close": "Zamknij panel Ekran",
   "computer.screenOf": "Ekran bota {name}",
   "computer.badge.local": "ten komputer",

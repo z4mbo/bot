@@ -9,10 +9,10 @@ import { useTeamPeople } from "@/state/team-people";
 import { inboxFixes, waitingCount } from "./inbox/inbox-view";
 import { inboxAttentionEntries, unreadConversations } from "./inbox/InboxActive";
 
-export function SidebarInboxRow({ icons, large, running, onOpened }: {
-  icons: boolean;
+export function SidebarInboxRow({ icons = false, large = false, running, onOpened }: {
+  icons?: boolean;
   /** Simple's row, sized as its bots' rows are. */
-  large: boolean;
+  large?: boolean;
   running: boolean;
   onOpened?: () => void;
 }) {
@@ -30,12 +30,13 @@ export function SidebarInboxRow({ icons, large, running, onOpened }: {
     else { openInbox(); onOpened?.(); }
   };
   const dot = running && <span data-inbox-running="" aria-hidden="true" className={cn("absolute -bottom-0.5 -right-0.5 rounded-full border-2 border-panel bg-success", icons ? "size-3" : "size-2.5")} />;
+  const badge = count > 0 && <span aria-hidden="true" data-inbox-count className="absolute -right-0.5 -top-0.5 flex min-w-4 items-center justify-center rounded-full bg-warning px-0.5 text-[10px] font-semibold leading-4 text-panel">{shown}</span>;
   if (icons) {
     return (
       <button type="button" data-sidebar-inbox={count} aria-label={label} title={label} aria-pressed={open} onClick={toggle}
         className={cn("relative mx-auto mb-1 flex size-[46px] shrink-0 items-center justify-center rounded-xl text-ink-secondary hover:bg-raised hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus", open && "bg-raised text-ink")}>
         <Inbox size={20} strokeWidth={1.5} aria-hidden="true" />
-        {count > 0 && <span aria-hidden="true" data-inbox-count className="absolute -right-0.5 -top-0.5 flex min-w-4 items-center justify-center rounded-full bg-warning px-0.5 text-[10px] font-semibold leading-4 text-panel">{shown}</span>}
+        {badge}
         {dot}
       </button>
     );

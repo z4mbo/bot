@@ -94,9 +94,10 @@ describe("glass surface", () => {
     expect(glassPopupTopInset("native")).toBe(24);
     for (const file of ["settings/SettingsWindow.tsx", "PluginsPanel.tsx"]) {
       const source = readFileSync(join(src, "components", file), "utf8");
-      expect(source, file).toContain('className="glass-popup-frame"');
-      expect(source, file).toMatch(/style=\{(\{ \.\.\.)?glassPopupFrameStyle\(\)/);
-      expect(source, file).toMatch(/className="glass-surface glass-popup /);
+      // In Simple mode the Apps store is a page of the chat area; as a pop-up it keeps this frame.
+      expect(source, file).toMatch(/className=(\{[^}]*: )?"glass-popup-frame"/);
+      expect(source, file).toMatch(/style=\{(\{ \.\.\.|[^}]*: )?glassPopupFrameStyle\(\)/);
+      expect(source, file).toMatch(/className=(\{[^}]*: )?"glass-surface glass-popup /);
       expect(source, file).not.toMatch(/100dvh/);
     }
   });

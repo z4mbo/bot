@@ -32,6 +32,7 @@ const stub = (name: string) => (props: Record<string, unknown>) =>
 vi.mock("./DetailsTab", () => ({ DetailsTab: stub("details") }));
 vi.mock("./LibraryTab", () => ({ LibraryTab: stub("library") }));
 vi.mock("./ComputerTab", () => ({ ComputerTab: stub("computer") }));
+vi.mock("./InboxTab", () => ({ InboxTab: stub("inbox") }));
 vi.mock("./pages", () => ({
   PageBody: ({ page, editingInstructions }: { page: string; editingInstructions?: boolean }) =>
     createElement("div", { "data-stub-page": page, "data-editing-instructions": editingInstructions === true ? "true" : undefined },
@@ -170,17 +171,17 @@ describe("named links into the bot panel", () => {
 });
 
 describe("the panel's tabs", () => {
-  it("are Details, Library and Computer, opening on Details, each drawing its own tab", async () => {
+  it("are Details, Library, Computer and Inbox, opening on Details, each drawing its own tab", async () => {
     render(null);
     await settle();
     expect([...host.querySelectorAll('[role="tab"]')].map((element) => [element.getAttribute("data-panel-tab"), element.textContent]))
-      .toEqual([["details", "Details"], ["library", "Library"], ["computer", "Computer"]]);
+      .toEqual([["details", "Details"], ["library", "Library"], ["computer", "Computer"], ["inbox", "Inbox"]]);
     expect(tab()).toBe("details");
     const strip = host.querySelector('[role="tablist"]')!.className.split(" ");
     expect(strip).toEqual(expect.arrayContaining(["sticky", "top-0", "bg-app"]));
     expect(host.querySelector('[role="tab"]')!.parentElement!.className.split(" ")).toEqual(expect.arrayContaining(["rounded-full", "bg-ink/[0.05]"]));
     expect(host.querySelector('[role="tab"]')!.className.split(" ")).toEqual(expect.arrayContaining(["h-[26px]", "text-[13px]", "bg-ink/[0.1]", "font-medium"]));
-    for (const id of ["library", "computer", "details"]) {
+    for (const id of ["library", "computer", "inbox", "details"]) {
       click(host.querySelector(`[data-panel-tab="${id}"]`));
       expect(tab()).toBe(id);
       expect(host.querySelector(`[data-stub-${id}]`), id).not.toBeNull();
@@ -189,12 +190,12 @@ describe("the panel's tabs", () => {
 });
 
 describe("the panel's top", () => {
-  it("has a round Share button that shares the bot as a template or copies or downloads the conversation, a gear for Bot settings, and Close", async () => {
+  it("has a gear for Bot settings and a round Share button on the left, and Close on the right, as the shares go: template, copy or download", async () => {
     render(null);
     await settle();
     const top = [...host.querySelectorAll("button")].slice(0, 3);
-    expect(top.map((button) => button.getAttribute("aria-label") ?? button.getAttribute("title"))).toEqual(["Share", "Bot settings", "Close settings"]);
-    for (const button of [moreButton()!, top[1]!, top[2]!]) expect(button.querySelector("span, svg")).not.toBeNull();
+    expect(top.map((button) => button.getAttribute("aria-label") ?? button.getAttribute("title"))).toEqual(["Bot settings", "Share", "Close settings"]);
+    for (const button of [top[0]!, moreButton()!, top[2]!]) expect(button.querySelector("span, svg")).not.toBeNull();
     click(moreButton());
     expect([...menu()!.querySelectorAll("[data-menu-key]")].map((row) => row.getAttribute("data-menu-key"))).toEqual(["as-template", "copy", "download"]);
     press(moreButton(), "Escape");

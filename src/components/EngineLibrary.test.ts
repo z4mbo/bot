@@ -31,7 +31,7 @@ describe("engine library", () => {
     const fallback = renderToStaticMarkup(createElement(InstanceProviderMark, { instance: instance() }));
     expect(preset).toContain("#0089D6");
     expect(custom).toContain("data:image/png;base64,iVBORw0KGgo");
-    expect(fallback).toContain("viewBox=\"0 0 256 257\"");
+    expect(fallback).toContain("viewBox=\"0 0 94 94\"");
   });
   it("preserves readiness semantics without mistaking installation for sign-in", () => {
     expect(engineReady(instance())).toBe(true);

@@ -16,7 +16,7 @@ export interface MenuMotion {
   exitProps: { inert?: boolean; "aria-hidden"?: boolean };
 }
 
-export function useMenuMotion(open: boolean): MenuMotion {
+export function useMenuMotion(open: boolean, ms = MENU_MOTION_MS): MenuMotion {
   const [mounted, setMounted] = useState(open);
 
   useLayoutEffect(() => {
@@ -29,9 +29,9 @@ export function useMenuMotion(open: boolean): MenuMotion {
       setMounted(false);
       return;
     }
-    const timer = window.setTimeout(() => setMounted(false), MENU_MOTION_MS);
+    const timer = window.setTimeout(() => setMounted(false), ms);
     return () => window.clearTimeout(timer);
-  }, [open, mounted]);
+  }, [open, mounted, ms]);
 
   // Read `open` itself, not only the trailing state, so the menu shows on the render its trigger flips and goes inert
   // on the render it closes.
@@ -44,8 +44,8 @@ export function useMenuMotion(open: boolean): MenuMotion {
   };
 }
 
-export function useHeldMenuMotion<T>(value: T | null): MenuMotion & { value: T | null } {
-  const motion = useMenuMotion(value != null);
+export function useHeldMenuMotion<T>(value: T | null, ms = MENU_MOTION_MS): MenuMotion & { value: T | null } {
+  const motion = useMenuMotion(value != null, ms);
   const held = useRef<T | null>(value);
   if (value != null) held.current = value;
   return { ...motion, value: value ?? held.current };

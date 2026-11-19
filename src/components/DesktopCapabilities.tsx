@@ -71,6 +71,12 @@ export function windowFramed(capabilities: Pick<DesktopCapabilities, "windowChro
   return windowFrameable(capabilities) && capabilities?.windowFrame !== false;
 }
 
+/** A framed window with the frame's top bar, which holds the macOS traffic lights. A framed Windows window has no bar:
+ * its caption buttons sit in the top right corner of the app (WindowCaptionButtons), level with the headers. */
+export function windowFrameBar(capabilities: Pick<DesktopCapabilities, "windowChrome" | "windowFrame"> | undefined): boolean {
+  return windowFramed(capabilities) && capabilities?.windowChrome === "mac-inset";
+}
+
 /** A window with no title bar of its own: the page's headers drag it, framed or not. */
 export function captionChrome(windowChrome: DesktopCapabilities["windowChrome"] | undefined) {
   const windowsCaption = windowChrome === "win-caption";

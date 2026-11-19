@@ -89,7 +89,7 @@ describe("bot-first sidebar", () => {
     { advanced: true, enabled: true, density: "comfortable", size: 32, spacing: ["gap-2", "py-2", "pl-6"] },
     { advanced: true, enabled: true, density: "icons", size: 44, spacing: ["justify-center", "px-1", "py-1.5"] },
     { advanced: true, enabled: false, density: "comfortable", size: 44, spacing: ["gap-3", "py-2", "pl-2.5", "pr-9"] },
-    { advanced: false, enabled: false, density: "comfortable", size: 42, spacing: ["gap-2", "rounded-[8px]", "pl-2", "pr-2", "md:h-[54px]"] },
+    { advanced: false, enabled: false, density: "comfortable", size: 42, spacing: ["gap-2.5", "rounded-[8px]", "pl-2", "pr-2", "md:h-[54px]"] },
     { advanced: false, enabled: false, density: "icons", size: 36, spacing: ["h-[54px]", "justify-center"] },
   ] as const)("sizes bot portraits and row spacing in $density density with threads $enabled (advanced $advanced)", ({ advanced, enabled, density, size, spacing }) => {
     fixture.advanced = advanced;
@@ -147,7 +147,7 @@ describe("bot-first sidebar", () => {
     expect(renderToStaticMarkup(createElement(BotListItem, rowProps("comfortable")))).not.toContain('data-testid="bot-role"');
   });
 
-  it("ends a Simple row's preview line with its engine's faded mark, puts the unread dot at the name line's top right where ⋯ shows, and never moves the name", () => {
+  it("ends a Simple row's preview line with no engine mark, puts the unread dot at the row's right end, halfway between name and preview, and never moves the name", () => {
     fixture.showThreads = false;
     fixture.state = { ...fixture.state, instances: [{ instanceId: "fake", driverKind: "claudeAgent", displayName: "Claude" }] as unknown as AppState["instances"] };
     const candidate = { ...bot, tasks: [], projects: [], unread: true, messages: [{ id: "m", role: "bot", kind: "text", text: "Done.", at: 1 }] } as Bot;
@@ -155,13 +155,11 @@ describe("bot-first sidebar", () => {
     function Capture() { tree = botRow(rowProps("comfortable", candidate)); return tree; }
     const markup = renderToStaticMarkup(createElement(Capture));
     const line = markup.slice(markup.indexOf(">Done.<"));
-    expect(line).toMatch(/^>Done\.<\/span><\/span><span data-testid="model-badge" role="img" aria-label="Model: [^"]+ \(Claude\)" class="[^"]*\bms-auto\b[^"]*"><span data-provider-mark="brand" class="[^"]*\bopacity-60\b/);
-    expect(line).toMatch(/^>Done\.<\/span><\/span><span data-testid="model-badge"[^>]*><span data-provider-mark="brand"[^>]*><svg[\s\S]*?<\/svg><\/span><\/span><\/div><span class="sr-only">Unread<\/span>/);
+    expect(line).toMatch(/^>Done\.<\/span><\/span><\/div><span class="sr-only">Unread<\/span>/);
+    expect(markup).not.toContain("model-badge");
     const name = markup.slice(markup.indexOf('class="flex items-baseline justify-between gap-2 pe-7 group-hover:pe-[3.25rem] group-focus-within:pe-[3.25rem] touch:pe-[3.25rem] max-md:touch:pe-7"'), markup.indexOf(">Done.<"));
-    expect(name).toMatch(/<span aria-hidden="true" data-row-dot="" class="pointer-events-none absolute right-\[3px\] top-1\.5 flex size-6 items-center justify-center transition-opacity group-hover:opacity-0 group-focus-within:opacity-0 touch:opacity-0 max-md:hidden"><span data-testid="unread-dot" title="Unread" class="size-2 shrink-0 rounded-full bg-accent"><\/span><\/span>/);
+    expect(name).toMatch(/<span aria-hidden="true" data-row-dot="" class="pointer-events-none absolute right-\[9px\] top-\[23px\] flex touch:hidden max-md:hidden"><span data-testid="unread-dot" title="Unread" class="size-2 shrink-0 rounded-full bg-accent"><\/span><\/span>/);
     expect(name).toContain('<span aria-hidden="true" title="Unread" class="size-2 shrink-0 rounded-full bg-accent hidden self-center max-md:block touch:block"></span>');
-    expect(markup.match(/data-provider-mark=/g)).toHaveLength(1);
-    expect(line.slice(0, line.indexOf("data-provider-mark"))).not.toContain("title=");
     expect(String(findElement(tree, "data-sidebar-bot-row", bot.id)!.props.className)).not.toContain("group-hover:pr-9");
     expect(markup).not.toContain("group-hover:pe-7");
     expect(markup).toMatch(/data-bot-actions="atlas"[^>]*class="[^"]*end-\[3px\] top-1\.5 size-6 translate-y-0\b/);
@@ -238,13 +236,14 @@ describe("bot-first sidebar", () => {
     expect(advanced).not.toContain("focus-visible:ring-accent/60");
   });
 
-  it("hides even the selected Simple row's actions until hover or focus, where Advanced keeps them shown", () => {
+  it("shows a Simple row's actions only to the keyboard, even selected, where Advanced keeps them shown", () => {
     fixture.showThreads = false;
     fixture.state = { ...fixture.state, selectedId: bot.id, activeView: "chat" };
     const candidate = { ...bot, tasks: [], projects: [] };
     const simple = renderToStaticMarkup(createElement(BotListItem, rowProps("comfortable", candidate)));
     expect(simple).toContain("[--row:var(--color-raised)]");
-    expect(simple).toMatch(/data-bot-actions="atlas"[^>]*class="[^"]*\bpointer-events-none opacity-0 group-hover:pointer-events-auto/);
+    expect(simple).toMatch(/data-bot-actions="atlas"[^>]*class="[^"]*\bpointer-events-none opacity-0 focus-visible:pointer-events-auto focus-visible:opacity-100\b/);
+    expect(simple.match(/<button[^>]*data-bot-actions="atlas"[^>]*>/)![0]).not.toContain("group-hover:");
     expect(simple).toContain('class="flex items-baseline justify-between gap-2 pe-7 group-hover:pe-[3.25rem] group-focus-within:pe-[3.25rem] touch:pe-[3.25rem] max-md:touch:pe-7"');
     fixture.advanced = true;
     expect(renderToStaticMarkup(createElement(BotListItem, rowProps("comfortable", candidate)))).toMatch(/data-bot-actions="atlas"[^>]*class="[^"]*\bpointer-events-auto opacity-100/);
@@ -283,7 +282,7 @@ describe("bot-first sidebar", () => {
     expect(advanced).toMatch(/data-testid="model-badge"[^>]*><span data-provider-mark="brand" class="[^"]*\bopacity-60\b/);
   });
 
-  it("keeps a Simple row to its name, preview and one faded engine mark, naming role, Chief and engine in its tooltip", () => {
+  it("keeps a Simple row to its name and preview, naming role, Chief and engine in its tooltip", () => {
     fixture.showThreads = false;
     const instances = [{ instanceId: "fake", driverKind: "claude", displayName: "Claude", models: { options: [{ id: "test", label: "Sonnet" }] } }] as unknown as AppState["instances"];
     fixture.state = { ...fixture.state, instances, selectedId: bot.id };
@@ -292,8 +291,8 @@ describe("bot-first sidebar", () => {
     function Capture() { tree = botRow(rowProps("comfortable", candidate)); return tree; }
     const markup = renderToStaticMarkup(createElement(Capture));
     expect(markup).not.toContain('data-testid="bot-role"');
-    expect(markup.match(/data-testid="model-badge"/g)).toHaveLength(1);
-    expect(markup.match(/data-provider-mark=/g)).toHaveLength(1);
+    expect(markup).not.toContain('data-testid="model-badge"');
+    expect(markup).not.toContain("data-provider-mark=");
     expect(markup).toMatch(/<span class="absolute -left-1 -top-1 flex rounded-full bg-raised p-\[3px\]"><svg[^>]*role="img"[^>]*aria-label="Chief of Staff"[^>]*data-testid="chief-crown"/);
     expect(markup).not.toContain("lucide-pin");
     expect(markup).not.toMatch(/tabular-nums text-ink-secondary transition-opacity group-hover:opacity-0/);
@@ -302,7 +301,7 @@ describe("bot-first sidebar", () => {
   });
 
   it.each([
-    { advanced: false, density: "comfortable", slot: "size-9", spacing: ["gap-2", "rounded-[8px]", "pl-2", "pr-2", "md:h-[54px]"], name: "font-medium", preview: "text-[13px]" },
+    { advanced: false, density: "comfortable", slot: "size-9", spacing: ["gap-2.5", "rounded-[8px]", "pl-2", "pr-2", "md:h-[54px]"], name: "font-medium", preview: "text-[13px]" },
     { advanced: false, density: "icons", slot: "size-9", spacing: ["h-[54px]", "justify-center"], name: "font-semibold", preview: "text-[11px]" },
     { advanced: true, density: "icons", slot: "size-12", spacing: ["justify-center", "px-1", "py-1.5"], name: "font-semibold", preview: "text-[11px]" },
     { advanced: true, density: "comfortable", slot: "size-8", spacing: ["gap-2", "py-1.5", "pl-6", "pr-9"], name: "font-semibold", preview: "text-[11px]" },
@@ -496,6 +495,36 @@ describe("bot-first sidebar", () => {
     renderToStaticMarkup(createElement(Capture));
     expect(named("New thread")).toBeUndefined();
     expect(named("View threads")).toBeDefined();
+  });
+
+  it("lists the bot's threads in its Simple menu, marks the one on screen and switches to another", () => {
+    let tree: ReactNode;
+    function Capture() {
+      tree = BotContextMenu({
+        menu: { botId: bot.id, x: 0, y: 0 }, onClose: vi.fn(), onArchive: vi.fn(), onDelete: vi.fn(), onMoveToSection: vi.fn(), onNewFolder: vi.fn(), onNewTaskFolder: vi.fn(),
+      });
+      return tree;
+    }
+    const threadItems = () => {
+      const found: ReactElement<ElementProps & { "data-bot-menu-thread"?: string; "aria-current"?: string }>[] = [];
+      const walk = (node: ReactNode) => {
+        for (const child of Children.toArray(node)) {
+          if (!isValidElement<ElementProps & { "data-bot-menu-thread"?: string }>(child)) continue;
+          if (child.props["data-bot-menu-thread"]) found.push(child);
+          walk(child.props.children);
+        }
+      };
+      walk(tree);
+      return found;
+    };
+    fixture.state = { ...fixture.state, bots: [{ ...bot, mainThreadId: "idle-history" }], selectedId: bot.id };
+    renderToStaticMarkup(createElement(Capture));
+    const rows = threadItems();
+    expect(rows[0]!.props["data-bot-menu-thread"], "the main thread leads").toBe("idle-history");
+    expect(rows.find((row) => row.props["aria-current"] === "page")?.props["data-bot-menu-thread"]).toBe("last-selected");
+    fixture.dispatch.mockClear();
+    rows.find((row) => row.props["data-bot-menu-thread"] === "unread")!.props.onClick!({} as MouseEvent);
+    expect(fixture.dispatch.mock.calls).toEqual([[{ type: "switchTask", botId: bot.id, threadId: "unread" }]]);
   });
 
   it("Edit profile opens the panel without naming a section", () => {

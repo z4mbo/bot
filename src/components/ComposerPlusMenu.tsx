@@ -67,6 +67,15 @@ export function GoalToggle({ on, onToggle, solo = false, compact = false }: { on
 
 const check = <Check size={15} className="shrink-0 text-accent" aria-hidden="true" />;
 
+/** One path, so a see-through ink paints the crossing once. */
+function PlusGlyph() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+      <path d="M10 3.75v12.5M3.75 10h12.5" />
+    </svg>
+  );
+}
+
 /** The thread's approval level, the same choices the Advanced composer's shield offers: the level shown and its menu.
  * Simple mode names the levels as the bot panel does. */
 function approvalMenu(choice: ApprovalChoice, simple: boolean) {
@@ -235,7 +244,7 @@ export function ComposerPlusMenu({ onAttach, goal, teach, approval, callBotId, e
     </span>
   ) : (
     <span data-composer-plus className={cn("flex items-center justify-center transition-colors", SIMPLE_CONTROL, open && "bg-ink/[0.09] text-ink")}>
-      <Plus size={20} strokeWidth={1.75} absoluteStrokeWidth aria-hidden="true" />
+      <PlusGlyph />
     </span>
   );
   if (!circle && items.length === 1) {

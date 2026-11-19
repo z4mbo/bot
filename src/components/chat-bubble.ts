@@ -32,6 +32,9 @@ export function plainBotBubble(simple: boolean): string {
 /** Simple mode's transcript spaces rows 16px apart (ChatView's data-simple-rows); a row in the same group pulls up 12px, to 4px. */
 export const SIMPLE_STACKED = "-mt-3";
 
+/** Simple mode's working row tucks into the row gap above it, into the slot `PRESENCE_SLOT_PX` keeps for it. */
+export const SIMPLE_PRESENCE_TUCK = "-mt-3.5";
+
 /** Where a Simple bubble meets its group's neighbours: those corners tighten to 6px on the bubble's own side. */
 export interface BubbleJoin {
   above: boolean;
@@ -51,10 +54,6 @@ export function bubbleGroup(message: Message, botId: string): "bot" | "user" | n
   if (message.role === "user") return peerLine(message) ? null : "user";
   if (message.role !== "bot" || peerRequest(message, botId)) return null;
   return isPureLeakedSystemHarnessMessage(message.text) && !message.attachments?.length ? null : "bot";
-}
-
-export function isBotTextRow(message: Message, botId: string): boolean {
-  return bubbleGroup(message, botId) === "bot";
 }
 
 /** A transcript row that draws nothing: a reaction, MausBot's follow-up (drawn under its intro), or a tool step or work

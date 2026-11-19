@@ -8,7 +8,7 @@ import { RELEASES_URL, desktopAppVersion, openExternalLink } from "@/lib/app-lin
 import { productName } from "../lib/brand";
 import { cn } from "@/lib/cn";
 import { t } from "@/lib/i18n";
-import { useDesktopCapabilities, windowFramed } from "./DesktopCapabilities";
+import { useDesktopCapabilities, windowFrameBar } from "./DesktopCapabilities";
 
 export function updateIndicatorShown(state: UpdaterState | null): boolean {
   return Boolean(state && ["downloading", "preparing", "downloaded", "installing"].includes(state.status));
@@ -26,18 +26,18 @@ export function updateIndicatorLabel(state: UpdaterState): string {
     : t("update.button.downloading", { percent: Math.round(state.percent) });
 }
 
-/** `bar`: in the window frame's top bar, a download arrow in that bar's button look (the class given). In a framed
- * window that arrow is the only one, so the sidebar's round buttons draw nothing. */
+/** `bar`: in the window frame's top bar, a download arrow in that bar's button look (the class given). In a window with
+ * that bar the arrow is the only one, so the sidebar's round buttons draw nothing. */
 export function UpdateIndicator({ className, bar }: { className?: string; bar?: string }) {
   const state = useUpdaterState();
-  const framed = windowFramed(useDesktopCapabilities().capabilities);
+  const frameBar = windowFrameBar(useDesktopCapabilities().capabilities);
   const [open, setOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const settled = !state || state.status === "idle" || state.status === "checking" || state.status === "handed-off";
   useEffect(() => {
     if (settled) setOpen(false);
   }, [settled]);
-  if (framed && bar === undefined) return null;
+  if (frameBar && bar === undefined) return null;
   if (!state || !updateIndicatorShown(state)) {
     return open && !settled ? <UpdateCard state={state} onClose={() => setOpen(false)} returnFocusRef={buttonRef} /> : null;
   }

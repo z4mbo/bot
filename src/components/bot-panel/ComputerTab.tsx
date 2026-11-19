@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { KeyRound, Monitor } from "lucide-react";
 
 import { writeComputerPanelView, type ComputerPanelView } from "@/lib/computer-panel-view";
+import { handOffPanel } from "@/lib/panel-handoff";
 import { t } from "@/lib/i18n";
 import type { Place } from "@/lib/place";
 import { placeHasIssue, worksOnSimpleLabel } from "@/lib/place-view";
@@ -10,6 +11,7 @@ import { api, useStore, type Bot } from "@/state/store";
 import { BotAvatar } from "../Avatar";
 import { useDesktopCapabilities } from "../DesktopCapabilities";
 import { LocalComputerAutoWarning } from "../LocalComputerAutoWarning";
+import { ComputerPanel } from "../lazy-screens";
 import { usePlaceViews } from "../PlaceChip";
 import { screenFramePreview } from "../ScreenFrame";
 import type { BotPatch, useBotSettingsDerived } from "../bot-settings/useBotSettingsDerived";
@@ -30,8 +32,11 @@ const OFF_LABEL = () => t("place.off");
 
 export function useOpenComputer(bot: Pick<Bot, "id">) {
   const { dispatch } = useStore();
+  // The computer view takes the panel's place at once, so its code is fetched before Watch is pressed.
+  useEffect(() => { void ComputerPanel.preload().catch(() => {}); }, []);
   return (view: ComputerPanelView = "computer") => {
     writeComputerPanelView(bot.id, view);
+    handOffPanel();
     dispatch({ type: "toggleSettings", open: false });
     dispatch({ type: "toggleComputer", open: true });
   };

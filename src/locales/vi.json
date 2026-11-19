@@ -3544,6 +3544,7 @@
   "computer.simple.dest.thisPc": "Máy tính này",
   "computer.simple.needsSetup": "Desktop của {name} cần một bước thiết lập trước.",
   "computer.simple.showAdvanced": "Hiển thị tùy chọn nâng cao",
+  "computer.backToBot": "Quay lại {name}",
   "computer.close": "Đóng bảng Màn hình",
   "computer.screenOf": "Màn hình của {name}",
   "computer.badge.local": "máy tính này",

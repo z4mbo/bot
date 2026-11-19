@@ -133,14 +133,14 @@ describe("Simple-mode sidebar layout", () => {
     expect(headers(tree).map((header) => header.props.name)).toEqual(["Group chats", "Work"]);
   });
 
-  it("fades the list's edges in both modes, with the top buttons and the tiles fixed above it", () => {
+  it("fades the list's edges in both modes, with the top buttons fixed above it and the tiles scrolling in it", () => {
     fixture.state = { ...fixture.state, bots: [bot("chief", { chiefOfStaff: true, pinned: true }), bot("atlas", { pinned: true }), bot("bea")] };
     const simple = render();
     expect(simple.tree.find((node) => node.type === GlassScrollFrame)!.props.fade).toBe(true);
     const head = simple.tree.find((node) => node.type === GlassBar && node.props.edge === "top")!;
-    expect(nodes(head.props.children).some((node) => node.type === SidebarTileGrid)).toBe(true);
+    expect(nodes(head.props.children).some((node) => node.type === SidebarTileGrid)).toBe(false);
     const list = simple.tree.find((node) => node.type === GlassScroller)!;
-    expect(nodes(list.props.children).some((node) => node.type === SidebarTileGrid)).toBe(false);
+    expect(nodes(list.props.children).some((node) => node.type === SidebarTileGrid)).toBe(true);
     expect(simple.root.props.className).toContain("max-md:[--scroll-fade-surface:var(--color-app)]");
     fixture.advanced = true;
     const advanced = render();
@@ -262,9 +262,9 @@ describe("Simple-mode sidebar layout", () => {
     expect(listedBots(render().tree)).toHaveLength(3);
   });
 
-  it("opens at 280px in Simple and 320px in Advanced, each remembering its own resized width", () => {
+  it("opens at 354px in Simple and 320px in Advanced, each remembering its own resized width", () => {
     const width = () => render().root.props.style!["--sidebar-width"];
-    expect(width()).toBe("280px");
+    expect(width()).toBe("354px");
     expect(render().root.props.className).toContain("w-[280px]");
     fixture.values = [];
     fixture.advanced = true;
@@ -277,7 +277,7 @@ describe("Simple-mode sidebar layout", () => {
     fixture.advanced = false;
     expect(width()).toBe("300px");
     const handle = render().tree.find((node) => node.type === SidebarResizeHandle)!.props as Parameters<typeof SidebarResizeHandle>[0];
-    expect(handle.sizing.defaultWidth).toBe(280);
+    expect(handle.sizing.defaultWidth).toBe(354);
     expect(handle.sizing.valueNow).toBe(300);
     fixture.storage.set(SIMPLE_SIDEBAR_WIDTH_KEY, "460");
     fixture.values = [];

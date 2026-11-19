@@ -1,15 +1,19 @@
 import { useLayoutEffect, useState, type RefObject } from "react";
 
-/** Must equal Tailwind `gap-3` on the transcript stack. */
-export const TRANSCRIPT_GAP = "0.75rem";
+/** Clear space between the last message and the composer when scrolled to the end. */
+export const COMPOSER_CLEARANCE = "54px";
+
+/** Simple mode's working row (36px, tucked 14px into the 16px row gap) takes this much of the clearance, so the
+ * transcript holds still when the row appears. */
+export const PRESENCE_SLOT_PX = 38;
 
 const FALLBACK_COMPOSER_PX = 64;
 
-export function transcriptEndPad(composerHeightPx: number): string {
+export function transcriptEndPad(composerHeightPx: number, { presenceSlot = false }: { presenceSlot?: boolean } = {}): string {
   const height = Number.isFinite(composerHeightPx)
     ? Math.max(0, Math.ceil(composerHeightPx))
     : FALLBACK_COMPOSER_PX;
-  return `calc(${height}px + ${TRANSCRIPT_GAP})`;
+  return presenceSlot ? `calc(${height}px + ${COMPOSER_CLEARANCE} - ${PRESENCE_SLOT_PX}px)` : `calc(${height}px + ${COMPOSER_CLEARANCE})`;
 }
 
 export function messageBoxHeight(dock: Pick<DOMRect, "bottom">, box: Pick<DOMRect, "top"> | undefined): number {

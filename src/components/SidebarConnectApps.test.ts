@@ -34,10 +34,11 @@ describe("the Connect apps faces", () => {
     expect(faces[2]).toContain("motion-safe:group-hover/apps:translate-x-[3px] motion-safe:group-hover/apps:rotate-[8deg]");
   });
 
-  it("is a round 36px puzzle button on the collapsed rail, named for screen readers", () => {
+  it("is a round 36px app-store button, named for screen readers, with a hover label in place of a native one", () => {
     const html = renderToStaticMarkup(createElement(SidebarConnectApps, { circle: true }));
-    expect(html).toMatch(/data-tour="nav-apps"[^>]*aria-label="Connect apps" title="Connect apps" class="[^"]*\bsize-9\b[^"]*\brounded-full\b/);
-    expect(html).toContain("lucide-puzzle");
+    expect(html).toMatch(/data-tour="nav-apps"[^>]*aria-label="Connect apps" class="[^"]*\bsize-9\b[^"]*\brounded-full\b/);
+    expect(html).not.toContain("title=");
+    expect(html).toMatch(/<svg[^>]*><rect[^>]*><\/rect><rect[^>]*><\/rect><rect[^>]*><\/rect><path/);
     expect(html).not.toContain("data-app-face");
   });
 

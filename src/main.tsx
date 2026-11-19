@@ -20,6 +20,7 @@ import { PageBoundary } from "./components/PageBoundary";
 import { endedBeforeReload, forgetEndedSession } from "./lib/session-ended";
 import { signInGateShown } from "./lib/sign-in-gate";
 import "./styles.css";
+import.meta.glob("./grok-study/fonts.css", { eager: true });
 
 // Before first paint; settleInterfaceMode must run before applySkin writes omb-skin.
 settleInterfaceMode();

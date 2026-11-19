@@ -21,7 +21,7 @@ import { useAdvancedMode } from "@/lib/interface-mode";
 import { useBesideFramed } from "@/lib/chrome-rail";
 import { computerName, editLocal, makeHome, placeInitials, recolorPlace, removeLocal, removePlace, usePlaces, type RailPlace } from "@/lib/places";
 import { AccountsSheet, switchNote } from "./AccountMenu";
-import { useDesktopCapabilities, windowFramed } from "./DesktopCapabilities";
+import { useDesktopCapabilities, windowFrameBar, windowFramed } from "./DesktopCapabilities";
 import { MENU_ROW, MENU_SHEET } from "./menu-recipe";
 import { PlaceAddSheet } from "./PlaceAddSheet";
 import { SwatchRadios } from "./SwatchRadios";
@@ -443,10 +443,10 @@ export function PlacesRail({ chrome = false }: { chrome?: boolean }) {
   };
   const framed = windowFramed(capabilities), draggable = capabilities.windowChrome !== "native";
   // In a framed window the rail is part of the frame: the window's own rail runs the full height, its top in the frame's
-  // top bar (the traffic lights' place), so its places start under that bar. With the frame turned off, or beside a page
-  // that doesn't draw it (an older release), they start under the traffic lights on macOS.
+  // top bar (the traffic lights' place), so its places start under that bar; Windows has no bar. With the frame turned
+  // off, or beside a page that doesn't draw it (an older release), they start under the traffic lights on macOS.
   const lights = capabilities.windowChrome === "mac-inset" ? "h-[52px]" : "h-3";
-  const above = !framed ? lights : !chrome ? "h-[9px]" : besideFramed ? "h-[37px]" : lights;
+  const above = !framed ? lights : !chrome ? "h-[9px]" : besideFramed ? windowFrameBar(capabilities) ? "h-[37px]" : "h-[9px]" : lights;
   // SAFETY: Electron's -webkit-app-region is not in React's CSSProperties type; the renderer accepts it as an inline style.
   const drag = draggable ? ({ WebkitAppRegion: "drag" } as CSSProperties) : undefined;
   const noDrag = draggable ? ({ WebkitAppRegion: "no-drag" } as CSSProperties) : undefined;

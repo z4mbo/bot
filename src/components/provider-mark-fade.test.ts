@@ -39,12 +39,12 @@ describe("the faded provider mark", () => {
     expect(claude).toMatch(/^<span data-provider-mark="brand" class="[^"]*\bopacity-60\b[^"]*\bgroup-hover:opacity-100\b/);
     expect(claude).toContain("group-focus-within:opacity-100 touch:opacity-60");
     expect(claude).toContain('style="width:14px;height:14px"');
-    const codex = renderToStaticMarkup(createElement(InstanceProviderMark, { instance: { driverKind: "codex" }, size: 14, subtle: true }));
-    expect(codex).toContain('data-provider-mark="mono"');
-    expect(codex).toContain("[--color-ink:var(--color-ink-tertiary)]");
-    expect(codex).toContain("group-hover:[--color-ink:inherit]");
-    expect(codex).toContain("group-focus-within:[--color-ink:inherit]");
-    expect(codex).not.toContain("opacity-60");
+    const grok = renderToStaticMarkup(createElement(InstanceProviderMark, { instance: { driverKind: "grokAgent" }, size: 14, subtle: true }));
+    expect(grok).toContain('data-provider-mark="mono"');
+    expect(grok).toContain("[--color-ink:var(--color-ink-tertiary)]");
+    expect(grok).toContain("group-hover:[--color-ink:inherit]");
+    expect(grok).toContain("group-focus-within:[--color-ink:inherit]");
+    expect(grok).not.toContain("opacity-60");
     expect(FADED_PROVIDER_MARK.mono).not.toContain("opacity");
   });
 

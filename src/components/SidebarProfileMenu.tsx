@@ -647,18 +647,20 @@ export function SidebarProfileMenu({ iconOnly = false, rail = false, circle = fa
         items={items}
         ariaLabel={name}
         onOpenChange={setMenuOpen}
-        triggerClassName={iconOnly || simple ? cn("shrink-0", circle || simple ? "rounded-full" : "rounded-xl") : "w-full"}
+        triggerClassName={simple ? "group/account flex w-full min-w-0 rounded-full" : iconOnly ? cn("shrink-0", circle ? "rounded-full" : "rounded-xl") : "w-full"}
         triggerTitle={iconOnly || simple ? label : undefined}
         triggerLabel={label}
         triggerTour={account?.place.switchable ? "server-switcher" : undefined}
         renderTrigger={({ open }) => simple ? (
-          <span
-            ref={triggerRef}
-            data-sidebar-account=""
-            className={cn("relative flex size-9 items-center justify-center rounded-full ring-2 transition-shadow", open ? "ring-ink/15" : "ring-transparent hover:ring-ink/10")}
-          >
-            <InitialsAvatar initials={initials} avatarUrl={profile?.avatarUrl} size={36} fallback={nameless} fontSize={14} className="ring-1 ring-inset ring-ink/[0.04]" />
-            {dot && <span aria-hidden data-account-dot={dot} className={cn("absolute -right-0.5 -top-0.5 size-2.5 rounded-full ring-2 ring-panel", DOT_COLOR[dot])} />}
+          <span ref={triggerRef} className="flex min-w-0 flex-1 items-center gap-2">
+            <span
+              data-sidebar-account=""
+              className={cn("relative flex size-9 shrink-0 items-center justify-center rounded-full ring-2 transition-shadow", open ? "ring-ink/15" : "ring-transparent")}
+            >
+              <InitialsAvatar initials={initials} avatarUrl={profile?.avatarUrl} size={36} fallback={nameless} fontSize={14} className="inset-ring inset-ring-ink/[0.06]" />
+              {dot && <span aria-hidden data-account-dot={dot} className={cn("absolute -right-0.5 -top-0.5 size-2.5 rounded-full ring-2 ring-panel", DOT_COLOR[dot])} />}
+            </span>
+            <span data-sidebar-account-name="" className="min-w-0 truncate text-[14px] font-medium leading-5 text-ink transition-colors group-hover/account:text-ink-secondary">{name}</span>
           </span>
         ) : iconOnly ? (
           <span

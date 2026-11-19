@@ -40,11 +40,12 @@ describe("who looks after a team bot, in the sidebar", () => {
     expect(row(bot({ createdBy: ADA.email }))).not.toContain("data-owner-face");
   });
 
-  it("keeps the selected bot's ⋯ menu in view, not only on hover", () => {
+  it("shows a Simple row's ⋯ menu to the keyboard only, selected or not", () => {
     const actions = (markup: string) => markup.match(/<button[^>]*data-bot-actions="fox"[^>]*>/)?.[0] ?? "";
-    expect(actions(row(bot(), true))).toContain("opacity-100");
-    expect(actions(row(bot(), false))).toContain("opacity-0");
-    expect(actions(row(bot(), false))).toContain("group-hover:opacity-100");
+    for (const selected of [true, false]) {
+      expect(actions(row(bot(), selected))).toContain("opacity-0 focus-visible:pointer-events-auto focus-visible:opacity-100");
+      expect(actions(row(bot(), selected))).not.toContain("group-hover:");
+    }
   });
 
   it("names no department caption for the person its bots report to", () => {

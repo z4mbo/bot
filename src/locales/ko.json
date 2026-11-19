@@ -4874,6 +4874,7 @@
   "computer.simple.dest.thisPc": "이 PC",
   "computer.simple.needsSetup": "{name}의 데스크톱은 먼저 설정이 필요해요.",
   "computer.simple.showAdvanced": "고급 컨트롤 보기",
+  "computer.backToBot": "{name}(으)로 돌아가기",
   "computer.close": "화면 패널 닫기",
   "computer.screenOf": "{name}의 화면",
   "computer.badge.local": "이 컴퓨터",

@@ -1,4 +1,4 @@
-import { Search, X } from "lucide-react";
+import { Plus, Search, X } from "lucide-react";
 import type { Ref } from "react";
 
 import { cn } from "@/lib/cn";
@@ -15,8 +15,14 @@ export const SIMPLE_TOP_BUTTON = `${SIMPLE_TOP} ${ELEVATED_CONTROL} ${ELEVATED_H
  * wears the tint of an open menu. */
 export const SIMPLE_TOP_TOGGLE = `${SIMPLE_TOP} ${ELEVATED_CONTROL} ${ELEVATED_TINT} ${SIMPLE_TOP_FOCUS}`;
 
-/** Search and New in the top corner of Simple's sidebar in a framed window: plain icons, each its own button. */
-export const SIMPLE_CORNER_BUTTON = `flex size-[26px] shrink-0 items-center justify-center rounded-lg text-ink-secondary transition-colors hover:bg-ink/[0.06] hover:text-ink aria-expanded:bg-ink/[0.06] aria-expanded:text-ink ${SIMPLE_TOP_FOCUS}`;
+/** The corner's glyphs share one 1.75px line. Search has a shorter lens and a longer handle than Lucide's. */
+export const CornerSearchIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" aria-hidden="true">
+    <circle cx="6.5" cy="6.5" r="5" />
+    <path d="M10.1 10.1 14 14" />
+  </svg>
+);
+export const CornerPlusIcon = () => <Plus size={20} strokeWidth={2.05} aria-hidden="true" />;
 
 /** The round control at either end of the phone bot list's top row. */
 export const PHONE_TOP_BUTTON = "flex size-10 shrink-0 items-center justify-center rounded-full border border-hairline bg-card text-ink hover:bg-raised focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus";
@@ -33,9 +39,9 @@ export function SidebarSearchToggle({ open, onToggle, corner = false, ref }: { o
       aria-label={t("sidebar.searchAria")}
       aria-expanded={open}
       title={t("sidebar.searchAria")}
-      className={corner ? SIMPLE_CORNER_BUTTON : SIMPLE_TOP_BUTTON}
+      className={SIMPLE_TOP_BUTTON}
     >
-      <Search size={corner ? 17 : 18} strokeWidth={1.5} aria-hidden="true" />
+      {corner ? <CornerSearchIcon /> : <Search size={18} strokeWidth={1.5} aria-hidden="true" />}
     </button>
   );
 }

@@ -3544,6 +3544,7 @@
   "computer.simple.dest.thisPc": "Bu PC",
   "computer.simple.needsSetup": "{name} adlı botun masaüstü için önce bir kurulum adımı gereklidir.",
   "computer.simple.showAdvanced": "Gelişmiş kontrolleri göster",
+  "computer.backToBot": "{name} sayfasına dön",
   "computer.close": "Ekran panelini kapat",
   "computer.screenOf": "{name} adlı botun ekranı",
   "computer.badge.local": "bu bilgisayar",

@@ -88,9 +88,9 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-describe.each([["Advanced", true], ["Simple", false]])("a streaming reply in %s mode", (_name, advanced) => {
+describe("a streaming reply in Advanced mode", () => {
   it("grows in place and is replaced by the saved message in the same frame, never shown twice", () => {
-    mode.advanced = advanced;
+    mode.advanced = true;
     engine({ type: "turn.started" });
     render(bot([ask]));
     expect(liveRows()).toHaveLength(0);
@@ -120,6 +120,26 @@ describe.each([["Advanced", true], ["Simple", false]])("a streaming reply in %s 
     expect(occurrences("the budget."), "one reply, not two").toBe(1);
     expect(looks(rowOf("m-saved")!).replace(/ inert=""/g, ""), "the saved bubble looks like the streamed one").toBe(live.replace(/ inert=""/g, ""));
     expect(rowOf("m-saved")!.querySelector(".turn-answer"), "it does not play in again").toBeNull();
+  });
+});
+
+describe("a reply in Simple mode", () => {
+  it("is not drawn while it streams, and arrives whole, once, playing in", () => {
+    mode.advanced = false;
+    engine({ type: "turn.started" });
+    render(bot([ask]));
+    say("Monday: gym. ");
+    say("Tuesday: review the budget.");
+    expect(liveRows(), "the status above the composer stands in for the draft").toHaveLength(0);
+    expect(occurrences("Monday: gym."), "no word of the draft on screen").toBe(0);
+
+    const text = "Monday: gym. Tuesday: review the budget.";
+    engine({ type: "item.completed", itemType: "assistant_text", text } as Partial<RuntimeEvent>);
+    const saved: Message = { id: "m-saved", role: "bot", kind: "text", at: started + 5_000, text, turnId: "t1", parentId: "ask" };
+    act(() => noteLiveReplyMessage(THREAD, saved));
+    render(bot([ask, saved]));
+    expect(occurrences("the budget."), "one reply, not two").toBe(1);
+    expect(rowOf("m-saved")!.querySelector(".turn-answer"), "the whole reply plays in").not.toBeNull();
   });
 });
 

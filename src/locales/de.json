@@ -1910,6 +1910,7 @@
   "computer.tab.browser": "Browser",
   "computer.tabsAria": "Bot-Panel-Ansicht",
   "computer.simple.needsSetup": "Der Desktop von {name} braucht zuerst einen Einrichtungsschritt.",
+  "computer.backToBot": "Zurück zu {name}",
   "computer.close": "Bildschirm-Panel schließen",
   "computer.screenOf": "Bildschirm von {name}",
   "computer.badge.local": "dieser Computer",

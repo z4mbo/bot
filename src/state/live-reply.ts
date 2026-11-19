@@ -202,14 +202,6 @@ export function useLiveReplies(threadId: string | null | undefined): readonly Li
   );
 }
 
-export function useHasLiveReply(threadId: string | null | undefined): boolean {
-  return useSyncExternalStore(
-    (listener) => subscribe(threadId, listener),
-    () => hasLiveReply(threadId),
-    () => false,
-  );
-}
-
 const rowCache = new WeakMap<LiveReplyItem, { text: string; message: Message }>();
 const sameSpeaker = (a: Message["from"], b: Message["from"]) =>
   a === b || (a !== undefined && b !== undefined && a.botId === b.botId && a.name === b.name && a.color === b.color);

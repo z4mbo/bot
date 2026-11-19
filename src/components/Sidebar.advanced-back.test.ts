@@ -46,7 +46,6 @@ async function draw() {
 }
 // Simple mode's hover list carries the same name as the tree's disclosure, so the tree's is the one that is not the list's.
 const expand = () => document.querySelector<HTMLButtonElement>(`button[aria-label="${t("task.expandNamed", { name: "Atlas" })}"]:not([data-bot-threads-peek])`);
-const peek = () => document.querySelector('[data-bot-threads-peek="atlas"]');
 const folder = () => document.querySelector('[data-sidebar-folder-row="taxes"]');
 
 beforeAll(() => {
@@ -78,10 +77,8 @@ describe("thread folders after Advanced mode comes back", () => {
     await draw();
     expect(folder()).toBeNull();
     expect(expand()).toBeNull();
-    expect(peek(), "the hover list stands in for the tree").not.toBeNull();
     flushSync(() => setAdvancedMode(true));
     await draw();
-    expect(peek()).toBeNull();
     expect(folder()?.textContent).toContain("Taxes");
   });
 });

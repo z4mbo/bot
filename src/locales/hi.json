@@ -1795,6 +1795,7 @@
   "computer.tab.browser": "ब्राउज़र",
   "computer.tabsAria": "बॉट पैनल का दृश्य",
   "computer.simple.needsSetup": "{name} के डेस्कटॉप को पहले एक सेटअप चरण चाहिए।",
+  "computer.backToBot": "{name} पर वापस जाएँ",
   "computer.close": "स्क्रीन पैनल बंद करें",
   "computer.screenOf": "{name} की स्क्रीन",
   "computer.badge.local": "यह कंप्यूटर",

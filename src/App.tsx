@@ -50,7 +50,7 @@ import { InboxPanel } from "@/components/inbox/InboxPanel";
 import { PlacesRail } from "@/components/PlacesRail";
 import { NewLocalFromMenu } from "@/components/PlaceAddSheet";
 import { CloudHowTo } from "@/components/CloudHowTo";
-import { DesktopCapabilitiesProvider, useCaptionChrome, useDesktopCapabilities, WindowDragStrip, windowFramed } from "@/components/DesktopCapabilities";
+import { DesktopCapabilitiesProvider, useCaptionChrome, useDesktopCapabilities, WindowDragStrip, windowFrameBar, windowFramed } from "@/components/DesktopCapabilities";
 import { WindowCaptionButtons } from "@/components/WindowCaptionButtons";
 import { WindowFrameBar } from "@/components/WindowFrameBar";
 import { cn } from "@/lib/cn";
@@ -76,6 +76,8 @@ import { phonePairingSettingsAction, takePhonePairingRequest } from "@/lib/phone
 import { isSettingsPage } from "@/components/settings/settings-index";
 import { useBotListDrawer } from "@/hooks/use-bot-list-drawer";
 import { useRememberedSidePanel } from "@/hooks/use-remembered-side-panel";
+import { SIDE_PANEL_MOTION_MS } from "@/components/bot-panel/side-panel";
+import { useHeldMenuMotion } from "@/components/MenuMotion";
 import { useDesktopNotificationOpens, useExternalChatLinks } from "@/hooks/use-external-chat-links"; import { useNewBotFromOtherPlace } from "@/lib/places-together";
 import { useUsageSnapshot } from "@/hooks/use-usage-snapshot";
 import { useReadShownChatOnFocus } from "@/hooks/use-read-shown-chat";
@@ -168,6 +170,7 @@ function Shell({ viewer }: { viewer: WelcomeViewer | null }) {
   const group = state.groups.find((g) => g.id === state.selectedId);
   const chiefStep = useChiefStepOpen();
   const bot = group || chiefStep ? undefined : (state.bots.find((b) => b.id === state.selectedId) ?? state.bots[0]);
+  const botPanel = useHeldMenuMotion(state.settingsOpen && bot && !remoteClient ? bot : null, SIDE_PANEL_MOTION_MS);
   const { open: drawerOpen, show: openDrawer, hide: hideDrawer, noteAction: noteDrawerAction } = useBotListDrawer({ selectedId: state.selectedId, botThread: bot?.threadId, groupThread: group?.threadId,
     view: state.activeView, pluginsOpen: state.pluginsOpen, settingsOpen: state.settingsOpen });
   const closeDrawer = useCallback(() => { hideDrawer(); menuButtonRef.current?.focus(); }, [hideDrawer]);
@@ -336,9 +339,9 @@ function Shell({ viewer }: { viewer: WelcomeViewer | null }) {
     });
   }, [dispatch]);
 
-  const framed = windowFramed(capabilities);
+  const framed = windowFramed(capabilities), frameBar = windowFrameBar(capabilities);
   const strips = <>
-    <UpdateBanner sidebarIndicator={framed || (!calendarFocus && (sidebarInline || drawerOpen))} />
+    <UpdateBanner sidebarIndicator={frameBar ||(!calendarFocus && (sidebarInline || drawerOpen))} />
     <CloudAsleepStrip />
     <LiveConnectionStrip connected={state.connected} hydrated={state.hydrated === true} />
     <CloudSendStrip cloudHome={state.config?.cloudHome === true} />
@@ -373,11 +376,11 @@ function Shell({ viewer }: { viewer: WelcomeViewer | null }) {
       )}
       {!calendarFocus && <PlacesRail />}
       <NewLocalFromMenu />
-      {/* A framed window shows the app, its sidebar and the chat or page, in a rounded card under the top bar and beside
-          the window's rail: its top corners and its bottom-left corner are round, and it runs to the window's right and
-          bottom edges. */}
+      {/* A framed window shows the app, its sidebar and the chat or page, in a rounded card beside the window's rail (and
+          under the top bar, when there is one): the corners that meet the frame are round, and it runs to the window's
+          other edges. */}
       <div data-window-card={framed ? "" : undefined}
-        className={framed ? "relative flex min-w-0 flex-1 flex-col overflow-hidden rounded-t-[12px] rounded-bl-[12px] bg-app" : "contents"}>
+        className={framed ? cn("relative flex min-w-0 flex-1 flex-col overflow-hidden rounded-bl-[12px] bg-app", frameBar && "rounded-t-[12px]") : "contents"}>
       {framed && strips}
       <div className={framed ? "relative flex min-h-0 flex-1" : "contents"}>
       {!calendarFocus && <Sidebar
@@ -436,10 +439,9 @@ function Shell({ viewer }: { viewer: WelcomeViewer | null }) {
         </main>
       )}
       {/* Sibling panels need distinct keys: two keyed `bot.id` collide in React's keyed reconciliation. */}
-      {state.settingsOpen && bot && (
-        remoteClient
-          ? <RemoteAgentSettingsPanel bot={bot} overlay={state.computerOpen && !twoSidePanelsFit} />
-          : <BotSettingsDialog key={`settings:${bot.id}`} bot={bot} overlay={(state.inspectorOpen || state.computerOpen || (notificationFeed && state.notificationsOpen)) && !twoSidePanelsFit} />
+      {state.settingsOpen && bot && remoteClient && <RemoteAgentSettingsPanel bot={bot} overlay={state.computerOpen && !twoSidePanelsFit} />}
+      {botPanel.shown && botPanel.value && !(botPanel.closing && state.computerOpen) && (
+        <BotSettingsDialog key={`settings:${botPanel.value.id}`} bot={botPanel.value} closing={botPanel.closing} overlay={(state.inspectorOpen || state.computerOpen || (notificationFeed && state.notificationsOpen)) && !twoSidePanelsFit} />
       )}
       {state.computerOpen && bot && (
         remoteClient ? (
@@ -461,7 +463,7 @@ function Shell({ viewer }: { viewer: WelcomeViewer | null }) {
       {!remoteClient && state.activityOpen && bot && <ActivityPanel key={`activity:${bot.id}`} bot={bot} />}
       {inboxShown && <InboxPanel />}
       {notificationTray && state.notificationsOpen && <NotificationsPanel />}
-      {notificationTray && !framed && <NotificationRail />}
+      {notificationTray && !frameBar && <NotificationRail />}
       </div>
       </div>
       {state.appSettingsOpen && <SettingsModal />}

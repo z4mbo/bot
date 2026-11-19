@@ -12,7 +12,7 @@ import {
 } from "@/lib/sidebar-preferences";
 
 export function sidebarDefaultWidth(simple: boolean): number {
-  return simple ? 280 : 320;
+  return simple ? 354 : 320;
 }
 
 /** Narrower than this, the sidebar's dragged edge leaves its column of avatars; wider again, the sidebar opens. */
@@ -38,8 +38,9 @@ export function useSidebarWidth({ simple, sidePanelOpen, sidebarRef }: {
 }) {
   const key = simple ? SIMPLE_SIDEBAR_WIDTH_KEY : SIDEBAR_WIDTH_KEY;
   const defaultWidth = sidebarDefaultWidth(simple);
+  const panelOpenMaxWidth = simple ? 280 : 320;
   const cap = simple ? 400 : 480;
-  const maxWidth = sidePanelOpen ? defaultWidth : Math.min(cap, window.innerWidth - 320);
+  const maxWidth = sidePanelOpen ? panelOpenMaxWidth : Math.min(cap, window.innerWidth - 320);
   const [savedWidth, setSavedWidth] = useState<number | null>(() => loadSidebarWidth(undefined, key));
   const widthRef = useRef(savedWidth);
   const [resizing, setResizing] = useState(false);
@@ -53,7 +54,7 @@ export function useSidebarWidth({ simple, sidePanelOpen, sidebarRef }: {
   useEffect(() => () => { if (snapTimer.current) clearTimeout(snapTimer.current); }, []);
   const current = () => Math.min(widthRef.current ?? defaultWidth, maxWidth);
   const resizeTo = (width: number) => {
-    const next = clampSidebarWidth(width, sidePanelOpen ? defaultWidth + 320 : window.innerWidth, cap);
+    const next = clampSidebarWidth(width, window.innerWidth, sidePanelOpen ? panelOpenMaxWidth : cap);
     if (next === Math.round(sidebarRef.current?.getBoundingClientRect().width ?? defaultWidth)) return null;
     widthRef.current = next;
     sidebarRef.current?.style.setProperty("--sidebar-width", `${next}px`);

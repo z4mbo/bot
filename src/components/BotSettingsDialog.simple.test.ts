@@ -281,7 +281,7 @@ beforeEach(() => {
 });
 
 describe("the bot panel in Simple mode", () => {
-  it("has Share, a gear for Bot settings and a close button on top, the hero, and three tabs: Details, Library, Computer", () => {
+  it("has Share, a gear for Bot settings and a close button on top, the hero, and four tabs: Details, Library, Computer, Inbox", () => {
     const bot = makeBot();
     const rendered = panel(bot);
     expect(ofType(rendered, ChatShareMenu)!.props.bot).toBe(bot);
@@ -293,7 +293,7 @@ describe("the bot panel in Simple mode", () => {
     expect(hero.props.bot).toBe(bot);
     expect(hero.props.patch).toBe(patch);
     const tabs = [...rendered.html.matchAll(/data-panel-tab="(\w+)"[^>]*>([^<]+)<\/button>/g)].map((match) => [match[1], match[2]]);
-    expect(tabs).toEqual([["details", "Details"], ["library", "Library"], ["computer", "Computer"]]);
+    expect(tabs).toEqual([["details", "Details"], ["library", "Library"], ["computer", "Computer"], ["inbox", "Inbox"]]);
     expect(shown(rendered)).toEqual({ tab: "details", page: undefined });
     expect(ofType(rendered, DetailsTab)!.props.bot).toBe(bot);
     expect(rendered.html).toContain('id="bot-settings-title"');

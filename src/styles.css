@@ -112,6 +112,8 @@
 
 @theme {
   --animate-panel-in: panel-in 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-side-panel-in: side-panel-in 0.3s cubic-bezier(0.2, 0, 0, 1);
+  --animate-side-panel-out: side-panel-out 0.3s cubic-bezier(0.2, 0, 0, 1) forwards;
   --animate-sheet-in: sheet-in 0.26s cubic-bezier(0.22, 1, 0.36, 1);
   --animate-workspace-in: workspace-in 0.18s cubic-bezier(0.22, 1, 0.36, 1);
   --animate-pop-in: pop-in 0.2s cubic-bezier(0.22, 1, 0.36, 1);
@@ -214,6 +216,9 @@
   --chat-column-max: 60rem;
   /* Menus; a phone rounds them like its sheets. */
   --radius-menu: 12px;
+  /* The Windows caption buttons: three of Windows 11's 46px buttons. */
+  --caption-buttons-width: 138px;
+  --caption-buttons-height: 52px;
 }
 :root[data-chat-width="wide"] {
   --chat-bubble-max: 64rem;
@@ -1617,6 +1622,27 @@ body {
    (--glass-popup-top, set from lib/glass-popup.ts); 24px elsewhere. The pane
    is min(1040px, 100% - 48px) wide and min(760px, 100% - top - 24px) tall:
    the padding takes the insets off, so 100% here is what is left. */
+/* The store as a page of a bot's chat in Simple mode: the pill rises out of view, the composer sinks, the conversation
+   fades, and the store fades in where it was. Closing plays it back. */
+main[data-look="chat"] [data-look="chat-header"],
+main[data-look="chat"] .chat-column-dock,
+main[data-look="chat"] [data-chat-scroller] {
+  transition: transform 340ms cubic-bezier(0.22, 1, 0.36, 1), opacity 220ms ease-out;
+}
+main[data-apps-open] [data-look="chat-header"] { transform: translateY(-110%); opacity: 0; pointer-events: none; }
+main[data-apps-open] .chat-column-dock { transform: translateY(110%); opacity: 0; }
+main[data-apps-open] .chat-column-dock * { pointer-events: none; }
+main[data-apps-open] [data-chat-scroller] { opacity: 0; pointer-events: none; }
+@keyframes apps-page-in {
+  from { opacity: 0; transform: translateY(10px); }
+}
+.apps-page { animation: apps-page-in 300ms cubic-bezier(0.22, 1, 0.36, 1) 160ms both; }
+@media (prefers-reduced-motion: reduce) {
+  main[data-look="chat"] [data-look="chat-header"],
+  main[data-look="chat"] .chat-column-dock,
+  main[data-look="chat"] [data-chat-scroller] { transition: none; }
+  .apps-page { animation: none; }
+}
 .glass-popup-frame {
   position: fixed;
   inset: 0;
@@ -1941,6 +1967,9 @@ body {
 .glass-bar[data-glass-fade] {
   --glass-fade: 60px;
 }
+.glass-bar[data-glass-clear]::before {
+  content: none;
+}
 .glass-bar[data-glass-fade]::before {
   background: linear-gradient(to bottom, var(--color-app), var(--color-app) calc(100% - var(--glass-fade)), color-mix(in srgb, var(--color-app) 90%, transparent));
   -webkit-backdrop-filter: none;
@@ -2124,6 +2153,42 @@ body {
   background: transparent;
 }
 
+/* The sidebar's list and the chat show their scrollbar only while the
+   pointer is over the sidebar or the chat: a 4px pill that brightens under the
+   pointer. Overflow switches rather than the thumb's colour, which Chromium
+   does not repaint on an ancestor's :hover; the gutter stays, so nothing
+   reflows. */
+[data-sidebar-scroller],
+[data-chat-scroller] {
+  scrollbar-gutter: stable;
+}
+@media (hover: hover) {
+  [data-sidebar]:not(:hover) [data-sidebar-scroller],
+  [data-chat-scroller]:not(:hover) {
+    overflow-y: hidden;
+  }
+}
+[data-sidebar-scroller]::-webkit-scrollbar-thumb,
+[data-chat-scroller]::-webkit-scrollbar-thumb {
+  border-width: 2px;
+  background-color: color-mix(in srgb, var(--color-ink) 16%, transparent);
+}
+[data-sidebar-scroller]::-webkit-scrollbar-thumb:hover,
+[data-sidebar-scroller]::-webkit-scrollbar-thumb:active,
+[data-chat-scroller]::-webkit-scrollbar-thumb:hover,
+[data-chat-scroller]::-webkit-scrollbar-thumb:active {
+  border-width: 2px;
+  background-color: color-mix(in srgb, var(--color-ink) 25%, transparent);
+}
+
+/* The bot panel opens by its width, so the chat beside it glides over as it
+   comes in; its content keeps its full width and is cut at the window edge. */
+@keyframes side-panel-in {
+  from { width: 0; }
+}
+@keyframes side-panel-out {
+  to { width: 0; }
+}
 @keyframes panel-in {
   from { transform: translateX(28px); opacity: 0; }
   to { transform: translateX(0); opacity: 1; }
@@ -2378,9 +2443,23 @@ html[data-cloud-intent-morph] [data-tour="composer"] { view-transition-name: clo
   color: var(--color-ink);
   animation: sheen-letters var(--sheen-period) linear var(--sheen-delay) infinite;
 }
-/* Simple mode's typing row is quieter: the sheen runs from tertiary ink up to secondary. */
-.turn-phrase-quiet .thinking-shimmer { color: var(--color-ink-tertiary); }
-.turn-phrase-quiet .thinking-sheen > span::before { color: var(--color-ink-secondary); }
+/* Simple mode's typing row: the letters sit at 40% ink and a full-ink band sweeps across them. */
+.turn-phrase-quiet .thinking-shimmer {
+  --shimmer-dim: color-mix(in srgb, var(--color-ink) 40%, transparent);
+  color: transparent;
+  background-image: linear-gradient(90deg, var(--shimmer-dim) 0%, var(--shimmer-dim) 25%, var(--color-ink) 60%, var(--shimmer-dim) 75%, var(--shimmer-dim) 100%);
+  background-size: 200% 100%;
+  background-clip: text;
+  animation: turn-shimmer 2.2s steps(60, end) var(--sheen-delay) infinite;
+}
+.turn-phrase-quiet .thinking-shimmer.turn-phrase-in {
+  animation: turn-phrase-in 0.32s ease-out both, turn-shimmer 2.2s steps(60, end) var(--sheen-delay) infinite;
+}
+.turn-phrase-quiet .thinking-sheen { display: none; }
+@keyframes turn-shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
 /* rotating presence phrase: the new phrase fades in where the old one was;
    only one is ever drawn */
 @keyframes turn-phrase-in {
@@ -2431,6 +2510,7 @@ html[data-cloud-intent-morph] [data-tour="composer"] { view-transition-name: clo
   .animate-status-pulse { animation: none; opacity: 0.6; }
   .thinking-sheen { display: none; }
   .turn-phrase-in { animation: none; }
+  .turn-phrase-quiet .thinking-shimmer, .turn-phrase-quiet .thinking-shimmer.turn-phrase-in { color: var(--color-ink-secondary); background-image: none; animation: none; }
   .turn-mascot-in, .turn-mascot-out, .turn-answer { animation: none; }
   .reply-bubble-in { animation: none; }
   .animate-rise, .animate-spot-in { animation: none; }
@@ -2963,6 +3043,11 @@ html[data-cloud-intent-morph] [data-tour="composer"] { view-transition-name: clo
 }
 .bg-danger {
   color: var(--color-danger-ink);
+}
+@media (hover: hover) {
+  .hover\:bg-danger:hover {
+    color: var(--color-danger-ink);
+  }
 }
 .bg-success {
   color: var(--color-success-ink);
@@ -3511,11 +3596,21 @@ button:disabled.bg-danger {
   -webkit-app-region: no-drag;
 }
 
-/* Simple's sidebar in the window frame: Search and New sit in its top corner
-   (Sidebar's corner row), and the bot tiles rise beside them while their first
-   row leaves the corner free (SidebarTileGrid measures it). */
-[data-sidebar-top-row="corner"] + [data-sidebar-tiles][data-beside-corner] {
-  margin-top: -34px;
+/* A header under the Windows caption buttons keeps its controls clear of
+   them; the chat header moves only its controls, so its pill stays centred. */
+[data-caption-room]:not([data-look="chat-header"]) {
+  padding-right: calc(var(--caption-buttons-width) + 1rem);
+}
+[data-look="chat-header"][data-caption-room] [data-chathead-controls] {
+  margin-right: var(--caption-buttons-width);
+}
+/* The bot panel's header under them: its close button, then a short divider
+   before the caption buttons. */
+[data-panel-header][data-caption-room] {
+  padding-right: calc(var(--caption-buttons-width) + 14px);
+}
+[data-panel-header][data-caption-room] [data-caption-divider] {
+  display: block;
 }
 
 /* Room speaker names. Each skin sets a tone of the bot's palette that clears

@@ -35,14 +35,14 @@ export function AvatarCornerDot({ activity, large }: { activity: Exclude<RowActi
     className={cn("absolute -right-0.5 -bottom-0.5 rounded-full border-2 border-panel", tone, large ? "size-3" : "size-2.5")} />;
 }
 
-/** Unread, or waiting for the person (which wins): one dot at the row's top right, in the spot its ⋯ takes on hover
- * or focus. A touch screen always shows the ⋯, so there the dot sits just before it, at the end of the name line. */
+/** Unread, or waiting for the person (which wins): one dot at the row's right end, halfway between its name and its
+ * preview. A touch screen always shows the ⋯, so there the dot sits just before it, at the end of the name line. */
 export function RowDot({ waiting = false }: { waiting?: boolean }) {
   const label = waiting ? t("sidebar.preview.waiting") : t("task.unread");
   const tone = cn("size-2 shrink-0 rounded-full", waiting ? "bg-warning" : "bg-accent");
   return (
     <>
-      <span aria-hidden="true" data-row-dot="" className="pointer-events-none absolute right-[3px] top-1.5 flex size-6 items-center justify-center transition-opacity group-hover:opacity-0 group-focus-within:opacity-0 touch:opacity-0 max-md:hidden">
+      <span aria-hidden="true" data-row-dot="" className="pointer-events-none absolute right-[9px] top-[23px] flex touch:hidden max-md:hidden">
         <span data-testid={waiting ? "waiting-dot" : "unread-dot"} title={label} className={tone} />
       </span>
       <span aria-hidden="true" title={label} className={cn(tone, "hidden self-center max-md:block touch:block")} />

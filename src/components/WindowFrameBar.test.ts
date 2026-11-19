@@ -28,7 +28,6 @@ vi.mock("./DesktopCapabilities", async (importOriginal) => ({
 }));
 
 import { setLocale } from "@/lib/i18n";
-import { tilesClearCorner } from "./SidebarTiles";
 import { NotificationRail } from "./NotificationsPanel";
 import { UpdateIndicator } from "./UpdateIndicator";
 import { WindowFrameBar } from "./WindowFrameBar";
@@ -116,11 +115,11 @@ describe("the window frame's top bar", () => {
     expect(bar()!.children).toHaveLength(3);
   });
 
-  it("leaves the caption buttons the right end on Windows, and draws nothing where the window has its own title bar", async () => {
+  it("draws no bar on Windows, whose caption buttons sit in the app's corner, nor where the window has its own title bar", async () => {
     fixture.windowChrome = "win-caption";
     await mount(createElement(WindowFrameBar));
-    expect(host.querySelector("[data-frame-bar-start]")!.className).toContain("pl-[calc(var(--rail-beside,0px)+8px)]");
-    expect(host.querySelector("[data-frame-bar-end]")!.className).toContain("pr-[140px]");
+    expect(bar()).toBeNull();
+    expect(fixture.frameDrawn, "main still hears that the page draws the frame").toHaveBeenLastCalledWith(true);
     await act(async () => root!.unmount());
     fixture.windowChrome = "native";
     await mount(createElement(WindowFrameBar));
@@ -194,6 +193,9 @@ describe("the window frame's top bar", () => {
     fixture.windowChrome = "native";
     await act(async () => root!.render(createElement(UpdateIndicator)));
     expect(host.querySelector("[data-update-indicator='downloaded']"), "unframed, the sidebar keeps its own").not.toBeNull();
+    fixture.windowChrome = "win-caption";
+    await act(async () => root!.render(createElement("div", null, createElement(WindowFrameBar), createElement(UpdateIndicator))));
+    expect(host.querySelector("[data-update-indicator='downloaded']"), "framed on Windows, with no bar, the sidebar keeps its own").not.toBeNull();
   });
 });
 
@@ -209,22 +211,5 @@ describe("the bell on the window's edge, for windows without the top bar", () =>
     fixture.notificationsOpen = true;
     await act(async () => root!.render(createElement(NotificationRail)));
     expect(host.querySelector("aside")).toBeNull();
-  });
-});
-
-describe("Simple's sidebar corner", () => {
-  // A 280px sidebar: 78px tiles 4px apart, centred, the grid's right edge at 280.
-  const row = (count: number, top = 10) => {
-    const width = count * 82 - 4, left = (280 - width) / 2;
-    return Array.from({ length: count }, (_, index) => ({ top, right: left + index * 82 + 78 }));
-  };
-
-  it("lets the tiles rise beside Search and New only while their first row ends before them", () => {
-    expect(tilesClearCorner(row(1), 280)).toBe(true);
-    expect(tilesClearCorner(row(2), 280)).toBe(true);
-    expect(tilesClearCorner(row(3), 280)).toBe(false);
-    expect(tilesClearCorner([...row(2), ...row(1, 106)], 280), "a second row under it changes nothing").toBe(true);
-    expect(tilesClearCorner(row(2), 240), "a narrower sidebar").toBe(false);
-    expect(tilesClearCorner([], 280)).toBe(false);
   });
 });

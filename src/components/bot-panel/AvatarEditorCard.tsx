@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { ChevronDown, ImagePlus, Loader2, Trash2 } from "lucide-react";
 
 import { cn } from "@/lib/cn";
@@ -16,6 +16,13 @@ import { AvatarImageGenerator } from "../AvatarImageGenerator";
 import { AvatarFraming, OrganizationAvatarIcons, RESET_MASCOT_PATCH, useAvatarImage, type AvatarPatch } from "../avatar-editing";
 import { Segmented } from "./rows";
 import { MascotFaceColorPicker } from "../MascotFaceColorPicker";
+
+type LocalLooks = {
+  LookPicker: (props: { bot: Bot; disabled?: boolean }) => ReactNode;
+  resetLook: (botId: string) => void;
+};
+/** A git-excluded local experiment may offer its own looks; in any other checkout this finds nothing. */
+const localLooks = import.meta.env.MODE === "test" ? undefined : Object.values(import.meta.glob<LocalLooks>("../../grok-study/BotAvatarOverride.tsx", { eager: true }))[0];
 
 export type AvatarEditorTab = "bot" | "generate" | "upload";
 
@@ -106,7 +113,7 @@ export function AvatarEditorCard({ bot, activeState, onPatch, onClose }: {
       aria-label={t("botPanel.avatar.edit")}
       data-panel-avatar-editor data-look="popover"
       onKeyDown={onKeyDown}
-      className="popover-surface absolute inset-x-[-5px] top-[80px] z-30 overflow-hidden rounded-2xl border border-ink/[0.08] bg-menu text-left shadow-2xl shadow-black/50"
+      className="popover-surface absolute left-1/2 top-[80px] z-30 w-[300px] max-w-[calc(100vw-2rem)] -translate-x-1/2 overflow-hidden rounded-2xl border border-ink/[0.08] bg-menu text-left shadow-2xl shadow-black/50"
     >
       <div ref={tabsRef} className="flex items-center gap-0.5 border-b border-ink/[0.06] p-2">
         {TABS.map(([id, label]) => (
@@ -129,7 +136,7 @@ export function AvatarEditorCard({ bot, activeState, onPatch, onClose }: {
           type="button"
           data-avatar-reset
           disabled={busy}
-          onClick={() => onPatch(RESET_MASCOT_PATCH)}
+          onClick={() => { localLooks?.resetLook(bot.id); onPatch(RESET_MASCOT_PATCH); }}
           className="ml-auto rounded-lg px-[11px] py-[5px] text-[13px] text-ink-secondary hover:text-ink disabled:opacity-50"
         >
           {t("botPanel.avatar.reset")}
@@ -137,7 +144,8 @@ export function AvatarEditorCard({ bot, activeState, onPatch, onClose }: {
       </div>
 
       <div className="p-3">
-        {tab === "bot" && (
+        {tab === "bot" && localLooks && <localLooks.LookPicker bot={bot} disabled={busy} />}
+        {tab === "bot" && !localLooks && (
           <>
             <div className="grid grid-cols-5 gap-1.5">
               {MASCOT_BODY_IDS.map((id) => bodyButton(id, bodyName(id)))}

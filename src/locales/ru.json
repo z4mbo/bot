@@ -4517,6 +4517,7 @@
   "computer.simple.dest.thisPc": "Этот ПК",
   "computer.simple.needsSetup": "Рабочему столу {name} сначала нужна настройка.",
   "computer.simple.showAdvanced": "Показать дополнительные элементы управления",
+  "computer.backToBot": "Назад: {name}",
   "computer.close": "Закрыть панель «Экран»",
   "computer.screenOf": "Экран {name}",
   "computer.badge.local": "этот компьютер",

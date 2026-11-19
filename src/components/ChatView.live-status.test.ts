@@ -97,14 +97,14 @@ describe("Simple mode's working line", () => {
     expect(statusLine()).toBe("Thinking it through");
     expect(mascot()!.innerHTML).toContain('width="28px"');
     const row = mascot()!.firstElementChild as HTMLElement;
-    expect([...row.classList]).toEqual(expect.arrayContaining(["h-9", "ps-2", "gap-2"]));
+    expect([...row.classList]).toEqual(expect.arrayContaining(["h-9", "ps-2", "gap-3.5"]));
     expect(row.title).toMatch(/^Working · /);
     expect(mascot()!.querySelector("[data-turn-status]")!.classList).toContain("text-ink-tertiary");
-    expect(mascot()!.classList).not.toContain("-mt-3");
+    expect(mascot()!.classList, "it tucks into the slot the transcript keeps above the composer").toContain("-mt-3.5");
 
     engine({ type: "item.completed", itemType: "assistant_text", text: intro.text! } as Partial<RuntimeEvent>);
     render(busyBot([ask, intro]));
-    expect(mascot()!.classList, "under the bot's own bubble it sits close, as one more part of the reply").toContain("-mt-3");
+    expect(mascot()!.classList, "under the bot's own bubble it holds the same slot").toContain("-mt-3.5");
     // The reply that just arrived pops in first; the line comes back once it has.
     act(() => void vi.advanceTimersByTime(600));
     engine({ type: "turn.progress", activity: "write", itemId: "toolu_write", file: "index.html", bytes: 14 * 1024 + 300 } as Partial<RuntimeEvent>);

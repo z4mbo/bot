@@ -132,24 +132,28 @@ describe("sidebar top row", () => {
     expect(html.match(/Switch server:/g)).toHaveLength(1);
   });
 
-  it.each(["mac-inset", "win-caption"] as const)("in Simple mode on %s keeps only the top corner: plain search and + at its right end, no drag region, no server pill, nothing on the edge", (windowChrome) => {
+  it.each(["mac-inset", "win-caption"] as const)("in Simple mode on %s keeps only the top corner: round Search and + at its right end, no drag region, no server pill, nothing on the edge", (windowChrome) => {
     fixture.advanced = false;
     fixture.windowChrome = windowChrome;
     desktop();
     const html = render();
     const row = topRow(html);
-    expect(row, "the bot tiles rise into the rest of the corner: no drag region, no clicks but the buttons'").toMatch(/^data-sidebar-top-row="corner" class="[^"]*\bpointer-events-none\b[^"]*\bh-\[34px\][^"]*\bitems-start\b[^"]*">/);
-    expect(classesOf(row, "data-sidebar-top-row")).toEqual(expect.arrayContaining(["justify-end", "px-1.5", "pt-1.5"]));
+    expect(row, "the corner drags the window round its buttons").toMatch(/^data-sidebar-top-row="corner" class="[^"]*\bh-14\b[^"]*\bitems-start\b[^"]*" style="-webkit-app-region:drag"/);
+    expect(classesOf(row, "data-sidebar-top-row")).not.toContain("pointer-events-none");
+    expect(classesOf(row, "data-sidebar-top-row")).toEqual(expect.arrayContaining(["justify-end", "pl-2", "pr-4", "pt-3"]));
     expect(row).not.toContain("data-workspace-switcher");
     expect(html).not.toContain("Switch server:");
     const { lights, slot, buttons } = order(row);
     expect(lights).toBe(-1);
     expect(buttons).toBeGreaterThan(slot);
-    expect(classesOf(row, "data-sidebar-top-buttons")).toEqual(expect.arrayContaining(["shrink-0", "pointer-events-auto"]));
-    expect(row.slice(buttons).match(/<button/g)).toHaveLength(2);
-    expect(row).toMatch(/data-sidebar-search-toggle="true" aria-label="Search bots and messages" aria-expanded="false" title="Search bots and messages" class="[^"]*\bsize-\[26px\][^"]*\brounded-lg\b[^"]*\btext-ink-secondary\b/);
-    expect(row, "no round box round either").not.toContain("bg-composer");
-    expect(html).toMatch(/aria-label="New or share" class="[^"]*\bsize-\[26px\][^"]*\brounded-lg\b/);
+    expect(classesOf(row, "data-sidebar-top-buttons")).toEqual(expect.arrayContaining(["shrink-0", "gap-2.5"]));
+    const searchClasses = classesOf(row, 'title="Search bots and messages"');
+    const addClasses = classesOf(html, 'aria-label="New or share" aria-expanded="false" aria-haspopup="menu"');
+    expect(searchClasses).toEqual(expect.arrayContaining(["size-9", "rounded-full", "bg-composer", "inset-ring"]));
+    expect(addClasses).toEqual(searchClasses);
+    const corner = row.slice(buttons);
+    expect(corner.match(/<button/g), "Search and New; each bot's inbox is a tab of its panel").toHaveLength(2);
+    expect(html).not.toContain("data-sidebar-inbox");
     expect(html).not.toContain("data-sidebar-edge-toggle");
     expect(html).not.toContain('title="Active Threads"');
     expect(html).not.toContain("data-sidebar-search-pill");
@@ -222,7 +226,7 @@ describe("sidebar top row", () => {
     expect(top).not.toContain("data-workspace-switcher");
     expect(top.indexOf('aria-label="Search bots and messages"')).toBeLessThan(top.indexOf('aria-label="New or share"'));
     expect(top).toMatch(/data-sidebar-rail-top="true" class="flex flex-col items-center gap-2 pt-1"/);
-    expect(top).toMatch(/aria-label="New or share" class="[^"]*\bsize-9\b[^"]*\brounded-full\b/);
+    expect(top).toMatch(/aria-label="New or share"[^>]*class="[^"]*\bsize-9\b[^"]*\brounded-full\b/);
     const foot = html.slice(html.indexOf("data-sidebar-rail-footer"));
     const at = (marker: string) => {
       const index = foot.indexOf(marker);
@@ -236,7 +240,7 @@ describe("sidebar top row", () => {
       at("data-sidebar-account"),
     ];
     expect(positions).toEqual([...positions].sort((a, b) => a - b));
-    expect(foot).toMatch(/data-tour="nav-apps" data-sidebar-nav="apps"[^>]*aria-label="Connect apps"[^>]*class="[^"]*\bsize-9\b[^"]*"><svg[^>]*lucide-puzzle/);
+    expect(foot).toMatch(/data-tour="nav-apps" data-sidebar-nav="apps"[^>]*aria-label="Connect apps"[^>]*class="[^"]*\bsize-9\b[^"]*"><svg/);
     expect(foot).not.toContain("data-workspace-switcher");
     expect(foot).not.toContain('data-sidebar-nav="automations"');
     expect(foot).not.toContain('data-sidebar-nav="team-map"');
@@ -352,7 +356,7 @@ describe("sidebar head and foot", () => {
 });
 
 describe("sidebar foot in Simple mode", () => {
-  it("puts the account avatar then the Connect apps pill in the foot, with Automations and Team map in the account menu", () => {
+  it("puts the account avatar and name, then the round Connect apps button, in the foot, with Automations and Team map in the account menu", () => {
     fixture.advanced = false;
     const html = render();
     const foot = html.slice(html.indexOf('data-glass-bar="bottom"'));
@@ -362,8 +366,9 @@ describe("sidebar foot in Simple mode", () => {
     expect(html.match(/data-sidebar-nav="apps"/g)).toHaveLength(1);
     expect(foot.indexOf("data-sidebar-account")).toBeGreaterThan(-1);
     expect(foot.indexOf("data-sidebar-account")).toBeLessThan(foot.indexOf('data-sidebar-nav="apps"'));
-    expect(foot).toMatch(/data-tour="nav-apps" data-sidebar-nav="apps"[^>]*>(<[^>]*>)*Connect apps</);
-    expect(foot.match(/data-app-face="/g)).toHaveLength(3);
+    expect(foot.indexOf("data-sidebar-account-name")).toBeLessThan(foot.indexOf('data-sidebar-nav="apps"'));
+    expect(foot).toMatch(/data-tour="nav-apps" data-sidebar-nav="apps"[^>]*aria-label="Connect apps"[^>]*class="[^"]*\bsize-9\b[^"]*\brounded-full\b/);
+    expect(foot).not.toContain("data-app-face");
   });
 
   it("keeps one Automations row in the foot and no Routines row in Advanced mode, and still one Apps", () => {

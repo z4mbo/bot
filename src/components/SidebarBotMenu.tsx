@@ -26,6 +26,9 @@ import type { MenuState } from "./Sidebar";
 import { departmentNames, moveBotsToSection, useMayMoveBots } from "./bot-sections";
 import { openBotSettings } from "./bot-panel/panel-link";
 import { isArchived } from "./SidebarThreadRow";
+import { peekThreads } from "@/lib/peek-threads";
+import { localizedTaskTitle } from "@/lib/task-title";
+import { botOpensTo } from "@/state/thread-navigation";
 
 type Flyout = "more" | "move";
 
@@ -296,7 +299,17 @@ export function BotContextMenu({
       () => dispatch({ type: "updateBot", botId: bot.id, patch: { mainThreadChoice: bot.threadId } }),
       bot.mainThreadId === bot.threadId ? { disabled: true, hint: t("sidebar.bot.simple.isMainThread") } : undefined,
     );
-    const threads = [divider("threads"), newThread, viewThreads, setMain];
+    const onScreen = state.selectedId === bot.id ? bot.switchingTo ?? bot.threadId : undefined;
+    const listed = peekThreads(bot, onScreen), main = botOpensTo(bot, false);
+    const threadRows = listed.length < 2 ? [] : listed.map((task) => (
+      <button key={`thread:${task.threadId}`} type="button" role="menuitem" data-bot-menu-thread={task.threadId} aria-current={task.threadId === onScreen ? "page" : undefined}
+        onClick={() => { dispatch({ type: "switchTask", botId: bot.id, threadId: task.threadId }); onClose(); }}
+        className={cn(MENU_ITEM, "text-ink hover:bg-menu-hover")}>
+        {task.threadId === onScreen ? <Check size={16} className="shrink-0 text-accent" /> : task.threadId === main ? <Star size={16} className="shrink-0 text-ink-secondary" /> : <span aria-hidden="true" className="size-4 shrink-0" />}
+        <span className="min-w-0 max-w-[240px] truncate">{localizedTaskTitle(task.title) || t("task.untitledConversation")}</span>
+      </button>
+    ));
+    const threads = [divider("threads"), newThread, ...threadRows, viewThreads, setMain];
     const moreRow = flyoutButton("more", moreRef, <MoreHorizontal size={16} className="text-ink-secondary" />, t("sidebar.bot.more"));
     const leave = bot.defaultBot ? [<HideDefaultBotItem key="hide" bot={bot} onDone={onClose} className={MENU_ITEM} />, ...(member ? [] : [<DemoteDefaultBotItem key="demote" bot={bot} onDone={onClose} className={MENU_ITEM} />])] : member ? ownDelete() : [
       item(<Archive size={16} className="text-ink-secondary" />, t("sidebar.bot.archive"), () => onArchive(bot), { disabled: archiveBlocked, hint: archiveHint }),

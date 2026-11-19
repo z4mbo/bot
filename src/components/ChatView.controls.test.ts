@@ -78,14 +78,15 @@ describe("the header's right side", () => {
     return { markup, controls: markup.slice(markup.indexOf("data-chathead-controls"), markup.indexOf("role=\"log\"")) };
   };
 
-  it("keeps the model picker and the bot's computer in view in Simple mode, with ⋯ left to the bot panel", () => {
+  it("keeps the model picker in the bot's pill in Simple mode, and the bot's computer and ⋯ in the bot panel", () => {
     fixture.advanced = false;
     try {
       const { markup, controls } = header();
-      expect(controls).toContain("data-test-model-control");
-      expect(fixture.model).toMatchObject({ threadId: "selected" });
-      const computer = controls.match(/<button[^>]*data-tour="computer"[^>]*>/)?.[0] ?? "";
-      expect(computer.split(" ")).toEqual(expect.arrayContaining(["rounded-full", "size-8"]));
+      expect(controls).not.toContain("data-test-model-control");
+      const identity = markup.slice(markup.indexOf("data-chathead-identity"), markup.indexOf("data-chathead-controls"));
+      expect(identity.indexOf("data-chathead-divider")).toBeLessThan(identity.indexOf("data-test-model-control"));
+      expect(fixture.model).toMatchObject({ threadId: "selected", inPill: true });
+      expect(controls).not.toContain('data-tour="computer"');
       expect(markup).not.toContain('data-testid="chat-more"');
       expect(fixture.menus.find((menu) => menu.ariaLabel === "More")).toBeUndefined();
       expect(markup).toContain("data-chathead-pill");
@@ -155,10 +156,14 @@ describe("the Simple header", () => {
       const simple = renderToStaticMarkup(createElement(ChatView, { bot: busyElsewhere }));
       const identity = simple.slice(simple.indexOf("data-chathead-identity"), simple.indexOf("data-chathead-controls"));
       const pill = identity.match(/<button[^>]*data-chathead-pill="true"[^>]*>([\s\S]*?)<\/button>/)!;
-      expect(identity.replace(pill[0], "").replace(/<span role="status"[^>]*>[^<]*<\/span>/, "")).not.toMatch(/<(button|a|span)[\s>]/);
+      const rest = identity.replace(pill[0], "").replace(/<span role="status"[^>]*>[^<]*<\/span>/, "").replace(/<span aria-hidden="true" data-chathead-divider[^>]*><\/span>/, "").replace(/<span data-test-model-control="true"><\/span>/, "");
+      expect(rest).not.toMatch(/<(button|a|span)[\s>]/);
       expect(pill[1]).toContain(">Pepper</span>");
       expect(pill[1]).toContain('data-chathead-elsewhere="true"');
-      expect(pill[0].match(/class="([^"]*)"/)![1]!.split(" ")).toEqual(expect.arrayContaining(["rounded-full", "bg-composer", "ring-[0.5px]", "py-[7.5px]", "pr-[13.5px]"]));
+      const shell = identity.match(/<div data-chathead-pill-shell="true" class="([^"]*)"/)![1]!.split(" ");
+      expect(shell).toEqual(expect.arrayContaining(["rounded-full", "bg-composer", "inset-ring"]));
+      expect(pill[0].match(/class="([^"]*)"/)![1]!.split(" ")).toEqual(expect.arrayContaining(["rounded-full", "py-[9.5px]", "pl-2.5", "pr-3"]));
+      expect(pill[0], "an open panel leaves the pill's fill as it is").not.toContain("aria-expanded:bg");
       // Away from the bot's main conversation, the pill names the one on screen.
       expect(pill[1]).toContain("data-chathead-conversation");
       for (const gone of ["data-chathead-role", "data-background-activity", "data-chathead-back", 'data-testid="chat-more"']) {
@@ -316,14 +321,14 @@ describe("glass header", () => {
     expect(markup.slice(scroller)).toMatch(/class="glass-scroller-content[^"]*"[^>]*role="log"/);
   });
 
-  it("fades the transcript into the canvas under the header in both modes", () => {
+  it("fades the transcript into the canvas under Advanced's header, and leaves it in view under Simple's pill", () => {
     const bar = (markup: string) => markup.match(/<div data-glass-bar="top"[^>]*>/)?.[0] ?? "";
     expect(bar(renderToStaticMarkup(createElement(ChatView, { bot })))).toContain('data-glass-fade=""');
     fixture.advanced = false;
     try {
       const markup = renderToStaticMarkup(createElement(ChatView, { bot }));
-      expect(bar(markup)).toContain('data-glass-fade=""');
-      expect(bar(markup)).not.toContain("before:hidden");
+      expect(bar(markup)).toContain('data-glass-clear=""');
+      expect(bar(markup)).not.toContain("data-glass-fade");
       expect(markup).toMatch(/class="glass-scroller [^"]*" style="scroll-padding-bottom:calc\(/);
     } finally {
       fixture.advanced = true;

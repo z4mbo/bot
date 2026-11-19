@@ -1,4 +1,4 @@
-export const ELEVATED_CONTROL = "bg-composer ring-1 ring-inset ring-ink/[0.07]";
+export const ELEVATED_CONTROL = "bg-composer inset-ring inset-ring-ink/[0.06]";
 /** A card in the conversation, a question or an approval: the floating surface, resting on the page without a shadow. */
 export const ELEVATED_CARD = "bg-composer ring-[0.5px] ring-ink/10";
 export const ELEVATED_FLOAT = `${ELEVATED_CARD} shadow-(--shadow-float)`;

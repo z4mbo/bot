@@ -5,7 +5,7 @@ import { Switch } from "./SettingsPrimitives";
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { waitForLocalVmReady } from "@/lib/local-vm-readiness";
-import { CalendarClock, ChevronRight, Columns2, Globe, Hand, Loader2, Maximize2, Monitor, Moon, Power, Settings, X } from "lucide-react";
+import { CalendarClock, ChevronLeft, ChevronRight, Columns2, Globe, Hand, Loader2, Maximize2, Monitor, Moon, Power, Settings, X } from "lucide-react";
 import { api, ApiError, currentTaskBot, useStore, type Bot, type ConfigStatus } from "@/state/store";
 import { setAdvancedMode, useAdvancedMode } from "@/lib/interface-mode";
 import { SIMPLE_ONLY } from "@/lib/simple-only";
@@ -14,6 +14,7 @@ import { effectivePlace, isComputerPlace, personPin, placeLabelKey, placeOffered
 import type { CloudBackend } from "../../shared/wire";
 import { KeyRow } from "./keys/KeyRow"; import { openKeySettings } from "./keys/key-focus";
 import { cn } from "@/lib/cn";
+import { handOffPanel, takePanelHandoff } from "@/lib/panel-handoff";
 import { useCaptionChrome } from "@/components/DesktopCapabilities";
 import { usePageVisible } from "@/lib/page-visible";
 import { listenLiveFrames } from "@/lib/live-events";
@@ -249,6 +250,7 @@ export function ComputerPanel({
   const [error, setError] = useState<Error | string | null>(null);
   const errorText = panelErrorText(error);
   const advanced = useAdvancedMode();
+  const [handedOff] = useState(() => takePanelHandoff());
   const [storedPanelView, setPanelView] = useState<ComputerPanelView>(() => readComputerPanelView(bot.id));
   const requestedDataResult = state.dataResultFocus?.botId === bot.id ? state.dataResultFocus : undefined;
   const [dataRequest, setDataRequest] = useState<{ id: string; requestId: number }>();
@@ -1186,14 +1188,16 @@ export function ComputerPanel({
     <>
     <aside
       className={cn(
-        "animate-panel-in relative flex h-full shrink-0 flex-col border-l border-hairline/40 bg-panel",
+        "relative flex h-full shrink-0 flex-col",
+        !handedOff && "animate-panel-in",
+        advanced ? "border-l border-hairline/40 bg-panel" : "border-l border-ink/[0.06] bg-app w-[min(569px,45vw)]",
         "max-md:absolute max-md:inset-0 max-md:z-40 max-md:w-full!",
       )}
       ref={panelRef}
       data-computer-panel
-      style={{ width: panelWidth }}
+      style={advanced ? { width: panelWidth } : undefined}
     >
-      <div
+      {advanced && <div
         ref={separatorRef}
         role="separator"
         aria-orientation="vertical"
@@ -1208,23 +1212,24 @@ export function ComputerPanel({
         onPointerUp={onResizeEnd}
         onPointerCancel={onResizeEnd}
         className="absolute inset-y-0 left-0 z-10 w-1.5 cursor-col-resize hover:bg-accent/40 focus-visible:bg-accent/60 max-md:hidden"
-      />
+      />}
       {/* ml-1.5 keeps the drag region clear of the resize handle: a later drag region in the DOM wins. */}
       <div {...dragProps} className="@container/paneltabs ml-1.5 py-3 pl-2.5 pr-4">
         <div className="relative flex min-h-7 items-center justify-center">
-          {advanced && (
-            <button
-              onClick={() => {
-                releaseComputerPanelFocus(panelRef.current, bot.id);
-                dispatch({ type: "toggleComputer", open: false });
-                dispatch({ type: "toggleSettings", open: true, section: "access" });
-              }}
-              className="absolute left-0 top-1/2 -translate-y-1/2 rounded-md p-1 text-ink-secondary hover:bg-control hover:text-ink"
-              title={t("computer.botSettings")}
-            >
-              <Settings size={18} />
-            </button>
-          )}
+          <button
+            data-computer-panel-back={advanced ? undefined : ""}
+            onClick={() => {
+              releaseComputerPanelFocus(panelRef.current, bot.id);
+              if (!advanced) handOffPanel();
+              dispatch({ type: "toggleComputer", open: false });
+              dispatch({ type: "toggleSettings", open: true, section: "access" });
+            }}
+            className="absolute left-0 top-1/2 -translate-y-1/2 rounded-md p-1 text-ink-secondary hover:bg-control hover:text-ink"
+            aria-label={advanced ? t("computer.botSettings") : t("computer.backToBot", { name: profileBot.name })}
+            title={advanced ? t("computer.botSettings") : t("computer.backToBot", { name: profileBot.name })}
+          >
+            {advanced ? <Settings size={18} /> : <ChevronLeft size={18} className="rtl:-scale-x-100" />}
+          </button>
           <div className="mx-9 flex min-w-0 touch-pan-x gap-0.5 overflow-x-auto whitespace-nowrap rounded-full bg-inset p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" data-tour="computer-tabs" data-testid="computer-tabs" role="tablist" aria-label={t("computer.tabsAria")} onWheel={scrollTabsWithWheel} onKeyDown={(event) => moveBetweenTabs(event, panelTabs, chooseTab)}>
             {panelTabs.map((view) => {
               const { Icon, label, tour } = PANEL_TABS[view];

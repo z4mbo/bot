@@ -5468,6 +5468,7 @@
   "computer.simple.dest.thisPc": "Este PC",
   "computer.simple.needsSetup": "Falta uma etapa de configuração para usar o desktop de {name}.",
   "computer.simple.showAdvanced": "Mostrar controles avançados",
+  "computer.backToBot": "Voltar para {name}",
   "computer.close": "Fechar o painel Tela",
   "computer.screenOf": "Tela de {name}",
   "computer.badge.local": "este computador",

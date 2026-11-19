@@ -58,7 +58,7 @@ import { normalizeState, stateForBot } from "@/lib/mascot";
 import { peerLine, peerPreview, peerRequest, type PeerLine } from "@/lib/peer-message"; import { PEER_HOW, PeerCompactRow, PeerMessagesContext, PeerOpenedActions } from "./PeerExchange";
 import { showWorkingDots } from "@/lib/turn-tail";
 import { lastNonReceipt } from "@/lib/receipts";
-import { useTurnLive } from "@/state/turn-status"; import { isLiveReply, StreamingReplyContext, streamedReply, useHasLiveReply, useLiveTranscript } from "@/state/live-reply"; import { useTurnNow } from "./NowCard"; import { useThreadRoutineRun } from "@/state/older-routine-runs";
+import { useTurnLive } from "@/state/turn-status"; import { isLiveReply, StreamingReplyContext, streamedReply, useLiveTranscript } from "@/state/live-reply"; import { useTurnNow } from "./NowCard"; import { useThreadRoutineRun } from "@/state/older-routine-runs";
 import { ChatMarkdown } from "./ChatMarkdown";
 import { LiveToolsContext, useLiveToolIds } from "@/hooks/use-live-tool-ids";
 import { VoiceNoteBubble, type VoiceNoteAttachment } from "./VoiceNoteBubble";
@@ -71,6 +71,7 @@ import { askText, runSkill, runSteps, runSummary, showRun, skillPrompt } from "@
 import { useShowRunCard } from "@/lib/run-card-preferences";
 import { useColorUserBubbles } from "@/lib/user-bubble-preference";
 import { userBubbleStyle } from "@/lib/user-bubble-tone";
+import { useLocalChatTint } from "@/lib/local-chat-tint";
 import { ToolActivity } from "./ToolActivity";
 import { DataResultChip } from "./DataResultChip"; import { PublishedPageCard } from "./PublishedPageCard"; import { TemplateChatCard } from "./TemplateCard"; import { PublishedSiteCards } from "./published-apps/PublishedSiteCards";
 import { ThreadRefText } from "./ThreadRefs"; import { WatchScreenButton } from "./WatchScreenButton";
@@ -115,7 +116,7 @@ import { BubbleEditor } from "./BubbleEditor";
 import { ReplyBlocks } from "./ReplyBlocks";
 import { webhookMessageView } from "@/lib/webhook-message";
 import { splitTranscriptAttachments } from "@/lib/composer-attachments";
-import { useComposerDockPad } from "@/lib/composer-dock";
+import { transcriptEndPad, useComposerDockPad } from "@/lib/composer-dock";
 import { GlassBar, GlassScrollFrame } from "./GlassScrollFrame";
 import { PagePaneContext } from "./app/PageTools";
 import { useTranscriptViewport } from "@/hooks/use-transcript-viewport"; import { staysInView } from "../../shared/person-wait";
@@ -135,7 +136,7 @@ import { latestFailure, latestReply, type TranscriptSnapshot } from "@/lib/trans
 import { pendingApprovals } from "./PendingApproval";
 import { TranscriptAnnouncer } from "./TranscriptAnnouncer";
 import { JumpToLatestButton } from "./JumpToLatestButton";
-import { isBotTextRow, joinedCorners, needsStamp, quietRow, simpleRowLayout, SIMPLE_BOT_BUBBLE, SIMPLE_BUBBLE_MAX, SIMPLE_BUBBLE_TEXT, SIMPLE_STACKED, SIMPLE_USER_BUBBLE, type BubbleJoin } from "./chat-bubble";
+import { joinedCorners, needsStamp, simpleRowLayout, SIMPLE_BOT_BUBBLE, SIMPLE_BUBBLE_MAX, SIMPLE_BUBBLE_TEXT, SIMPLE_PRESENCE_TUCK, SIMPLE_STACKED, SIMPLE_USER_BUBBLE, type BubbleJoin } from "./chat-bubble";
 
 const USER_COLLAPSE_CHARS = 600;
 const USER_COLLAPSE_LINES = 8;
@@ -445,7 +446,7 @@ const Bubble = memo(function Bubble({
           className={cn(
             tabled ? "w-full" : "w-fit",
             simple ? !tabled && SIMPLE_BUBBLE_MAX : "max-w-[min(var(--chat-bubble-max),var(--chat-bubble-pct))] rounded-2xl text-[15px] leading-relaxed",
-            emerging && !streamedReply(message.id) && "turn-answer",
+            emerging && (simple || !streamedReply(message.id)) && "turn-answer",
             user && webhookView
               ? cn("overflow-hidden border border-accent/25 bg-card text-ink", simple ? cn("rounded-[18px]", SIMPLE_BUBBLE_TEXT) : "shadow-[0_10px_30px_rgba(0,0,0,0.18)]")
               : attachmentsOnly || split || tabled
@@ -663,7 +664,9 @@ const MessagesList = memo(function MessagesList({
   onReply: (message: Message) => void;
 }) {
   const { botId, threadId, botName, botColor, bots, hasMore, focus, showToolCalls, locale, dispatch, canReact, simple = false } = useChatRows(), busy = use(ChatBusyContext);
-  const messages = useLiveTranscript(threadId, saved, transcript);
+  const withLive = useLiveTranscript(threadId, saved, transcript);
+  // Simple mode shows the turn's status above the composer and the reply only once it is whole, never its draft.
+  const messages = useMemo(() => (simple ? withLive.filter((message) => !isLiveReply(message)) : withLive), [simple, withLive]);
   // A finished turn keeps the bot's progress lines and folds only its tool steps under "Worked for", in both modes.
   const items = useMemo(() => groupTranscript(messages), [messages, locale]);
   const newestMessageId = messages.at(-1)?.id;
@@ -880,7 +883,8 @@ export const ChatView = memo(function ChatView({ bot: profile, inForkPanel = fal
   const onBranch = useCallback((messageId: string) => branch.current.some((m) => m.id === messageId), []);
   const colorMine = useColorUserBubbles();
   // Simple mode draws your bubble in one flat tone of the bot's colour.
-  const bubbleStyle = useMemo(() => (colorMine ? userBubbleStyle(bot.color, { flat: !advanced }) : undefined), [colorMine, bot.color, advanced]);
+  const tint = useLocalChatTint(bot);
+  const bubbleStyle = useMemo(() => (!colorMine ? undefined : tint ? tint.bubble : userBubbleStyle(bot.color, { flat: !advanced })), [colorMine, tint, bot.color, advanced]);
   const hasMore = Boolean(bot.hasMore);
   const reactor = useReactor();
   const speakerViewer = reactor !== "user" ? reactor : null;
@@ -944,8 +948,6 @@ export const ChatView = memo(function ChatView({ bot: profile, inForkPanel = fal
   }, [lastMessage?.id, lastMessage?.role, lastMessage?.kind]);
   const teammatesWorking = !advanced && !bot.busy && Boolean(bot.waitingForTeammates);
   const presenceVisible = waiting || popping !== null || teammatesWorking, sharedRun = useSharedRun(bot, advanced);
-  const lastShownRow = windowedMessages.findLast((message) => !quietRow(message, showToolCalls));
-  const presenceUnderBubble = useHasLiveReply(bot.threadId) || Boolean(lastShownRow && isBotTextRow(lastShownRow, bot.id));
   const announcement = useMemo((): TranscriptSnapshot => {
     const approval = pendingApprovals(messages)[0];
     return {
@@ -983,7 +985,7 @@ export const ChatView = memo(function ChatView({ bot: profile, inForkPanel = fal
       <CallOverlay bot={bot} />
       <GlassScrollFrame className="flex-1 [--glass-tint:var(--color-app)]">
       {/* z-[25]: above the room set-up card (z-20), below the CallOverlay (z-30). */}
-      <GlassBar edge="top" fade={!remoteClient} className="z-[25]">
+      <GlassBar edge="top" fade={!remoteClient && !simpleHead} clear={simpleHead} className="z-[25]">
       <div
         {...headerDragProps} data-look="chat-header"
         className={cn(
@@ -1000,6 +1002,7 @@ export const ChatView = memo(function ChatView({ bot: profile, inForkPanel = fal
               avatar={{ state: stateForBot({ ...bot, messages }), motion: mascotMotion?.kind ?? "none", motionKey: mascotMotion?.nonce ?? 0, animated: headerAnimated }}
               privacy={privateChat ? { kind: "private" } : ownHelper ? { kind: "ownHelper" } : sharedChat && team ? { kind: "shared", team: team.name, onlyPeopleAdded: bot.onlyPeopleAdded, sharedWith: currentTask?.sharedWith?.name } : null}
               onToggle={() => dispatch({ type: "toggleSettings", open: !state.settingsOpen })}
+              model={!phone && <ModelPicker key={bot.threadId} bot={bot} threadId={bot.threadId} inPill />}
             />
           ) : advanced ? (
             <div data-chathead-pill className={cn(CHATHEAD_PILL, "pr-1")}>
@@ -1086,8 +1089,8 @@ export const ChatView = memo(function ChatView({ bot: profile, inForkPanel = fal
           )}
           <ThreadContextWarning bot={bot} messages={messages} />
           {phone && <UsageAlert engine={bot.modelSelection?.instanceId} />}
-          {/* The model and the bot's computer stay in view in both modes; Simple mode moves only ⋯ into the bot panel. */}
-          {!phone && <ModelPicker key={bot.threadId} bot={bot} threadId={bot.threadId} />}
+          {/* Simple mode keeps the model in the bot's pill and the bot's computer in its panel. */}
+          {!phone && !simpleHead && <ModelPicker key={bot.threadId} bot={bot} threadId={bot.threadId} />}
           <LiveCallChip currentBotId={bot.id} onOpen={(botId, threadId) => openThread(dispatch, { botId, threadId }, store.state(), showThreads)} />{!phoneMenu && <WatchScreenButton botId={bot.id} messages={messages} liveTools={liveTools} place={place} />}
           <PinnedMessagesMenu
             pins={pinnedPreview(messages, bot.pinnedMessageId, bot.name)}
@@ -1095,7 +1098,7 @@ export const ChatView = memo(function ChatView({ bot: profile, inForkPanel = fal
             onJump={(messageId) => dispatch({ type: "focusMessage", threadId: bot.threadId, messageId })}
             onUnpin={remoteClient ? undefined : () => dispatch({ type: "updateTask", botId: bot.id, threadId: bot.threadId, patch: { pinnedMessageId: "" } })}
           />
-          {!phoneMenu && <button
+          {!phoneMenu && !simpleHead && <button
             data-tour="computer"
             onClick={(event) => { if (!state.computerOpen) rememberComputerPanelOpen({ botId: bot.id, opener: event.currentTarget, tabs: event.detail === 0 }); dispatch({ type: "toggleComputer" }); }}
             className={cn(
@@ -1128,6 +1131,7 @@ export const ChatView = memo(function ChatView({ bot: profile, inForkPanel = fal
 
       <div
         ref={scrollRef}
+        data-chat-scroller=""
         className="glass-scroller h-full overflow-x-hidden overflow-y-auto overscroll-y-contain px-5 [overflow-anchor:none]"
         // Simple mode's composer sits on plain canvas, so a row scrolled into view stops clear of it.
         style={advanced ? undefined : { scrollPaddingBottom: composerDock.pad }}
@@ -1138,7 +1142,7 @@ export const ChatView = memo(function ChatView({ bot: profile, inForkPanel = fal
           // Simple mode spaces groups 16px apart, Advanced 12px.
           data-simple-rows={advanced ? undefined : ""}
           className="glass-scroller-content chat-column relative flex w-full flex-col gap-3 data-[simple-rows]:gap-4"
-          style={{ paddingBottom: composerDock.pad }}
+          style={{ paddingBottom: !advanced && presenceVisible ? transcriptEndPad(composerDock.height, { presenceSlot: true }) : composerDock.pad }}
           role="log"
           // off: a polite log re-reads every tick and chip while the bot works; TranscriptAnnouncer speaks once when
           // done.
@@ -1207,7 +1211,7 @@ export const ChatView = memo(function ChatView({ bot: profile, inForkPanel = fal
               />
             }
             simple={!advanced}
-            className={cn(!advanced && presenceUnderBubble && SIMPLE_STACKED)}
+            className={cn(!advanced && SIMPLE_PRESENCE_TUCK)}
             label={teammatesWorking ? t("chat.teammatesWorking") : sharedRun.label}
             visible={presenceVisible} threadId={bot.threadId}
             {...now}

@@ -9,6 +9,7 @@ import { useCaptionChrome } from "../DesktopCapabilities";
 import type { useBotSettingsDerived } from "../bot-settings/useBotSettingsDerived";
 import { AvatarEditorCard } from "./AvatarEditorCard";
 import { ComputerTab } from "./ComputerTab";
+import { InboxTab } from "./InboxTab";
 import { DetailsTab } from "./DetailsTab";
 import { LibraryTab } from "./LibraryTab";
 import { PANEL_TABS, PAGES, TAB_LABEL, type PanelTab, type PanelTarget, type SimplePageId } from "./page-registry";
@@ -96,8 +97,7 @@ export function BotPanel({ bot, derived, linkedSection, onClose }: {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col" onKeyDown={onKeyDown}>
-      <div {...dragProps} className="flex h-[50px] shrink-0 items-start justify-end gap-2.5 px-[13px] pt-[13px]">
-        <ChatShareMenu bot={bot} className={roundButtonCls} />
+      <div {...dragProps} data-panel-header className="relative flex h-14 shrink-0 items-start gap-2.5 pl-[11px] pr-[13px] pt-3">
         <button
           type="button"
           data-panel-gear
@@ -109,9 +109,11 @@ export function BotPanel({ bot, derived, linkedSection, onClose }: {
         >
           <Settings size={16} className="pointer-events-none" />
         </button>
-        <button type="button" onClick={onClose} aria-label={t("botSettings.simple.close")} className={roundButtonCls}>
+        <ChatShareMenu bot={bot} className={roundButtonCls} />
+        <button type="button" onClick={onClose} aria-label={t("botSettings.simple.close")} className={cn(roundButtonCls, "ms-auto")}>
           <X size={16} className="pointer-events-none" />
         </button>
+        <span aria-hidden="true" data-caption-divider className="absolute right-[140px] top-[17px] hidden h-[18px] w-px bg-ink/[0.16]" />
       </div>
 
       <div ref={bodyRef} className="@container relative min-h-0 flex-1 overflow-y-auto px-4 pb-7">
@@ -160,6 +162,7 @@ export function BotPanel({ bot, derived, linkedSection, onClose }: {
               {tab === "details" && <DetailsTab bot={bot} derived={derived} onOpen={openPage} />}
               {tab === "library" && <LibraryTab bot={bot} onOpen={openPage} />}
               {tab === "computer" && <ComputerTab bot={bot} derived={derived} onOpen={openPage} />}
+              {tab === "inbox" && <InboxTab bot={bot} />}
             </div>
           </>
         ) : (

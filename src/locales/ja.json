@@ -5080,6 +5080,7 @@
   "computer.simple.dest.thisPc": "この PC",
   "computer.simple.needsSetup": "まず {name} のデスクトップをセットアップする必要があります。",
   "computer.simple.showAdvanced": "詳細な操作を表示",
+  "computer.backToBot": "{name} に戻る",
   "computer.close": "画面パネルを閉じる",
   "computer.screenOf": "{name} の画面",
   "computer.badge.local": "このコンピューター",

@@ -67,7 +67,7 @@ import {
   type PasteAttachment,
 } from "@/lib/composer-attachments";
 import { goalCoordinatorForComposer, jevRoomRoutingOn, openTaskWorking, roomRouteForComposer } from "@/lib/group-routing";
-import { composerPlaceholder, sendLabels, SIMPLE_COMPOSER, SIMPLE_CONTROL, slotColors } from "./composer-simple"; import { ComposerSendButton } from "./ComposerSendButton"; import { ComposerContextMenu } from "./ComposerContextMenu";
+import { composerPlaceholder, sendLabels, SIMPLE_COMPOSER, SIMPLE_CONTROL, slotColors } from "./composer-simple"; import { ComposerSendButton } from "./ComposerSendButton"; import { useLocalChatTint } from "@/lib/local-chat-tint"; import { ComposerContextMenu } from "./ComposerContextMenu";
 import { PendingApprovalActions, PendingApprovalPanel, pendingApprovals } from "./PendingApproval";
 import { CallButton } from "./CallView";
 import { GroupCallButton } from "./GroupCallView";
@@ -512,7 +512,8 @@ export function Composer({
   const stoppable = (busy || Boolean(!group && bot?.waitingForTeammates)) && mayStop;
   const stopInSlot = simpleDock && stoppable && !locked && !hasContent && !calling;
   const callShown = !simpleDock || !hasContent || busy || Boolean(!group && bot?.waitingForTeammates) || calling;
-  const slot = slotColors(bot?.color, Boolean(group));
+  const tint = useLocalChatTint(group ? undefined : bot);
+  const slot = slotColors(bot?.color, Boolean(group), tint);
   // A one-to-one bot at work: Enter does the chosen follow-up and Ctrl/⌘ with it the other one. Rooms keep their own queue.
   const followUpFor = (alternate: boolean) => resolveFollowUp({ running: busy && !group && Boolean(bot), alternate, preferred: followUpDefault, canSteer }) ?? undefined;
   const steersNow = group ? canSteer : followUpFor(false) === "steer";
@@ -933,7 +934,7 @@ export function Composer({
           })}
           aria-label={t("composer.placeholder.bot", { name: group ? group.name : (bot?.name ?? "") })}
             className={cn(
-              "block max-h-[9rem] w-full resize-none overflow-y-auto bg-transparent placeholder:text-ink-tertiary focus:outline-none",
+              "block max-h-[9rem] w-full resize-none overflow-y-auto bg-transparent placeholder:text-ink/[0.36] focus:outline-none",
               !simpleDock && "px-1 text-[15px]",
               simpleDock ? "min-h-7 px-0.5 py-1 text-[14px] leading-5" : "min-h-6 py-1 leading-6",
             )}

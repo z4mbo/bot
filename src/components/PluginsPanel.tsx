@@ -1,7 +1,10 @@
-import { Fragment, useCallback, useEffect, useRef, useState } from "react";
-import { Check, ChevronDown, ChevronRight, Loader2, RefreshCw, Search, Server, TriangleAlert, X } from "lucide-react";
+import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { Check, ChevronDown, ChevronLeft, ChevronRight, Loader2, RefreshCw, Search, Server, TriangleAlert, X } from "lucide-react";
 import { api, useStore, type Bot, type InstanceInfo } from "@/state/store";
 import { cn } from "@/lib/cn";
+import { useAdvancedMode } from "@/lib/interface-mode";
+import { useCaptionChrome } from "./DesktopCapabilities";
 import { glassPopupFrameStyle } from "@/lib/glass-popup";
 import { activeLocale, intlLocale, t } from "@/lib/i18n";
 import type { LocaleKey } from "@/locales";
@@ -110,10 +113,27 @@ export function botsUsingService(bots: Bot[], instances: InstanceInfo[], slug: s
   return botsForApps(bots, instances).filter((bot) => botAppScope(bot, slug) !== null);
 }
 
+/** In Simple mode the store opens as a page of a bot's chat area rather than over the app. */
+export const APPS_PAGE_HOST = 'main[data-look="chat"]';
+
+function appsPageHost(): HTMLElement | null {
+  return typeof document !== "undefined" && typeof document.querySelector === "function" ? document.querySelector<HTMLElement>(APPS_PAGE_HOST) : null;
+}
+
 export function PluginsPanel() {
   const { state, dispatch } = useStore();
   const remoteClient = window.ogb?.remoteClient?.active === true;
   const dialogRef = useRef<HTMLDivElement>(null);
+  const advanced = useAdvancedMode();
+  const pageHostRef = useRef<HTMLElement | null | undefined>(undefined);
+  if (pageHostRef.current === undefined) pageHostRef.current = advanced ? null : appsPageHost();
+  const pageHost = pageHostRef.current;
+  const { noDragStyle } = useCaptionChrome();
+  useLayoutEffect(() => {
+    if (!pageHost) return;
+    pageHost.dataset.appsOpen = "";
+    return () => { delete pageHost.dataset.appsOpen; };
+  }, [pageHost]);
   const surface = state.pluginsSurface;
   const [cards, setCards] = useState<ToolkitCard[] | null>(null);
   const [source, setSource] = useState<"api" | "curated">("curated");
@@ -273,7 +293,7 @@ export function PluginsPanel() {
       ).filter((element) => element.getClientRects().length > 0);
 
     const controls = focusable();
-    (controls.find((element) => element.matches("input")) ?? controls[0] ?? dialog)?.focus();
+    (controls.find((element) => element.matches("input")) ?? controls[0] ?? dialog)?.focus({ preventScroll: true });
     const onKeyDown = (event: KeyboardEvent) => {
       if (disconnectingRef.current) return;
       if (event.key === "Escape") {
@@ -459,27 +479,36 @@ export function PluginsPanel() {
     ? "bg-ink text-app"
     : "bg-control/70 text-ink-secondary hover:bg-raised-hover hover:text-ink";
 
-  return (
+  const tree = (
     <div
-      className="glass-popup-frame"
-      style={glassPopupFrameStyle()}
-      onMouseDown={(event) => event.target === event.currentTarget && close()}
+      data-apps-page={pageHost ? "" : undefined}
+      className={pageHost ? "apps-page absolute inset-0 z-[26] flex justify-center px-8 pt-14" : "glass-popup-frame"}
+      style={pageHost ? noDragStyle : glassPopupFrameStyle()}
+      onMouseDown={pageHost ? undefined : (event) => event.target === event.currentTarget && close()}
     >
       {/* A sibling, not the parent: a backdrop-filter on an ancestor would stop the pop-up's own glass from seeing the app behind it. */}
-      <div aria-hidden="true" className="glass-scrim pointer-events-none absolute inset-0" />
+      {!pageHost && <div aria-hidden="true" className="glass-scrim pointer-events-none absolute inset-0" />}
       <div
         ref={dialogRef}
         data-tour="apps-panel"
         role="dialog" data-look="dialog"
-        aria-modal="true"
+        aria-modal={pageHost ? undefined : "true"}
         aria-labelledby="plugins-title"
         tabIndex={-1}
-        className="glass-surface glass-popup animate-pop-in relative flex max-w-[780px] flex-col overflow-hidden rounded-2xl"
+        className={pageHost ? "relative flex h-full w-full max-w-[1240px] flex-col overflow-hidden" : "glass-surface glass-popup animate-pop-in relative flex max-w-[780px] flex-col overflow-hidden rounded-2xl"}
       >
         <header className="flex flex-col gap-4 px-5 pb-4 pt-5 sm:px-7 sm:pt-6">
           <div>
           <div className="flex items-center justify-between gap-3">
-            <h2 id="plugins-title" className="min-w-0 truncate text-[20px] font-semibold leading-7 tracking-[-0.01em] text-ink">{t("apps.title")}</h2>
+            <div className="flex min-w-0 items-center gap-2">
+              {pageHost && (
+                <button type="button" data-apps-back onClick={close} aria-label={t("rail.back")} title={t("rail.back")}
+                  className="-ms-2 flex size-8 shrink-0 items-center justify-center rounded-full text-ink-secondary hover:bg-raised hover:text-ink">
+                  <ChevronLeft size={20} className="rtl:-scale-x-100" />
+                </button>
+              )}
+              <h2 id="plugins-title" className={cn("min-w-0 truncate font-semibold tracking-[-0.01em] text-ink", pageHost ? "text-[26px] leading-8" : "text-[20px] leading-7")}>{t("apps.title")}</h2>
+            </div>
             <div className="flex shrink-0 items-center gap-1">
               <button
                 type="button"
@@ -748,6 +777,7 @@ export function PluginsPanel() {
       </div>
     </div>
   );
+  return pageHost ? createPortal(tree, pageHost) : tree;
 
   function renderSuggested() {
     const shown = suggestions.cards.filter((card) => !isConnected(card.slug));

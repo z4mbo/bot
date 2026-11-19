@@ -5801,6 +5801,7 @@
   "computer.simple.dest.thisPc": "This PC",
   "computer.simple.needsSetup": "{name}'s desktop needs a setup step first.",
   "computer.simple.showAdvanced": "Show advanced controls",
+  "computer.backToBot": "Back to {name}",
   "computer.close": "Close the Screen panel",
   "computer.screenOf": "{name}'s screen",
   "computer.badge.local": "this computer",
